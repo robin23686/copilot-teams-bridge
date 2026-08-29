@@ -172,7 +172,14 @@ describe('HarnessRegistry', () => {
 	// `harness "vscode-agent-mcp" (confidence "exact") cannot be delivered into from this
 	// window` reported, on a session whose chat had already been resolved.
 	it('has an adapter registered for every harness declared deliverable', () => {
-		const shared = new StubAdapter('vscode-sidebar', true, ['vscode-sidebar', 'vscode-agent-mcp']);
+		// Mirrors what the real SidebarAdapter claims. `sidebarAdapterRegression.test.ts`
+		// runs the same invariant against the actual class; this one keeps the registry
+		// mechanism honest without loading `vscode`.
+		const shared = new StubAdapter('vscode-sidebar', true, [
+			'vscode-sidebar',
+			'vscode-agent-mcp',
+			'vscode-agent-host'
+		]);
 		const registry = new HarnessRegistry(hold).register(shared);
 		const served = registry.servedHarnesses();
 		for (const harness of deliverableHarnesses) {

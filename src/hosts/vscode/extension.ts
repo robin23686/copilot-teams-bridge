@@ -25,6 +25,8 @@ import { NotifyTool, type NotifyToolParams } from './notifyTool';
 import { BridgeMcpProvider, MCP_PROVIDER_ID } from './mcpProvider';
 import { ChatSessionWatcher } from './chatSessionWatcher';
 import { ChatSessionResolver } from './chatSessionResolver';
+import { confirmAgentHostTurn, listAgentHostSessions, workspaceStateDbPath } from './agentHostIndex';
+import { isAgentHostResource, type AgentHostSession } from './agentHostSessions';
 import { AgentReplyRelay } from './agentReplyRelay';
 import { findBridgeServerNames } from './legacyMcpEntry';
 import { announceSession, resetAnnouncements, titleFromPrompt } from './sessionStarter';
@@ -80,7 +82,17 @@ export function activate(context: vscode.ExtensionContext): void {
 				? revealChatSessionInEditor(resource, log, trace)
 				: Promise.resolve(false),
 		confirmLanded: (resource, marker) =>
-			confirmLandedIn(chatSessionsUri(context), resource, marker, config.deliveryConfirmMs)
+			isAgentHostResource(resource)
+				? // A Copilot-mode chat writes no transcript, so the usual marker search would
+					// find nothing and report a false failure for every delivery. Its own request
+					// timing is the evidence available for that surface.
+					confirmAgentHostTurn({
+						sessions: () => agentHostSessions(context),
+						resource,
+						writtenAt: Date.now(),
+						ceilingMs: config.deliveryConfirmMs
+					})
+				: confirmLandedIn(chatSessionsUri(context), resource, marker, config.deliveryConfirmMs)
 	});
 	harnesses = new HarnessRegistry(
 		new HoldAdapter({
@@ -274,7 +286,14 @@ function startWatchers(context: vscode.ExtensionContext): void {
 	// server's behalf.
 	// An agent session records no chat, so its reply has to be addressed by finding the
 	// conversation that made the call.
-	const chatSessions = new ChatSessionResolver({ chatSessionsUri: chatSessionsUri(context), log });
+	const chatSessions = new ChatSessionResolver({
+		chatSessionsUri: chatSessionsUri(context),
+		log,
+		// A Copilot-mode chat leaves no transcript to search, so VS Code's own index is the
+		// only record of it. Passed as a function because the index changes as the user works.
+		agentHostSessions: () => agentHostSessions(context),
+		workspacePath: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+	});
 
 	agentRelay?.dispose();
 	agentRelay = new AgentReplyRelay({
@@ -684,6 +703,17 @@ async function resetLocalState(context: vscode.ExtensionContext): Promise<void> 
 function chatSessionsUri(context: vscode.ExtensionContext): vscode.Uri {
 	const base = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, '..', '..');
 	return vscode.Uri.joinPath(base, '..', 'chatSessions');
+}
+
+/**
+ * The Copilot-mode sessions VS Code currently knows about.
+ *
+ * Read on demand rather than cached: the user opens and closes these while the bridge runs,
+ * and a stale list would either miss the session that made a call or offer one that has
+ * gone. Every failure inside returns an empty list, which degrades to holding the reply.
+ */
+function agentHostSessions(context: vscode.ExtensionContext): AgentHostSession[] {
+	return listAgentHostSessions({ stateDbPath: workspaceStateDbPath(chatSessionsUri(context)), log });
 }
 
 function ensureBridge(context: vscode.ExtensionContext): Bridge {

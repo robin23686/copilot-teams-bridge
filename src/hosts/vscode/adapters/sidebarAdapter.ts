@@ -36,7 +36,7 @@ export class SidebarAdapter implements HarnessAdapter {
 	 * {@link deliverableHarnesses} and the registry, so an agent-MCP session is not
 	 * declared deliverable by policy while being held forever in practice.
 	 */
-	readonly serves = ['vscode-sidebar', 'vscode-agent-mcp'] as const;
+	readonly serves = ['vscode-sidebar', 'vscode-agent-mcp', 'vscode-agent-host'] as const;
 
 	constructor(private readonly deps: SidebarAdapterDeps) {}
 

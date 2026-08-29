@@ -1,4 +1,5 @@
 import type { ChatHandle, HarnessKind, InboundReply, Session, SessionIdentity } from '../../domain/types';
+import { isAgentHostResource } from '../../domain/chatSessionLink';
 
 /** A reply paired with the session it belongs to, ready to be handed to a harness. */
 export interface DeliverableReply {
@@ -256,6 +257,8 @@ export function describeHarness(harness: SessionIdentity['harness']): string {
 			return 'a Copilot agent session in VS Code';
 		case 'cli-runtime':
 			return 'the Copilot CLI runtime';
+		case 'vscode-agent-host':
+			return 'a Copilot-mode chat in VS Code';
 		case 'external':
 			return 'a Copilot client outside this VS Code window';
 		default:
@@ -283,7 +286,9 @@ export function identityOf(session: Session): SessionIdentity {
 
 	if (legacyChat) {
 		return {
-			harness: 'vscode-sidebar',
+			// A Copilot-mode chat is recognisable from the reference alone, and calling it
+			// "the Copilot Chat panel" in a message to the user would be plainly wrong.
+			harness: isAgentHostResource(session.chatSessionResource) ? 'vscode-agent-host' : 'vscode-sidebar',
 			chat: legacyChat,
 			confidence: 'derived',
 			capturedBy: 'resolver',
@@ -312,7 +317,11 @@ export function identityOf(session: Session): SessionIdentity {
  */
 const DELIVERABLE_HARNESSES: ReadonlySet<SessionIdentity['harness']> = new Set([
 	'vscode-sidebar',
-	'vscode-agent-mcp'
+	'vscode-agent-mcp',
+	// Safe to declare here only because a session is never recorded as `vscode-agent-host`
+	// without the chat handle that resolution produced -- see HarnessKind. `canDeliver`
+	// still checks the handle on the individual identity.
+	'vscode-agent-host'
 ]);
 
 /**

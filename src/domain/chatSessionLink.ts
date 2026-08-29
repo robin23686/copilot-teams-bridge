@@ -26,6 +26,20 @@ export function chatSessionResourceFor(chatSessionId: string): string {
 }
 
 /**
+ * Scheme VS Code gives a "Copilot mode" chat, backed by the Copilot CLI agent host.
+ *
+ * Lives here rather than with the code that reads VS Code's index because whether a
+ * reference names that surface is a fact about the reference itself, and the domain decides
+ * how a session is described from it.
+ */
+export const AGENT_HOST_SCHEME = 'agent-host-copilotcli:';
+
+/** True when a stored chat reference addresses a Copilot-mode session. */
+export function isAgentHostResource(resource: string | undefined): boolean {
+	return typeof resource === 'string' && resource.startsWith(AGENT_HOST_SCHEME);
+}
+
+/**
  * Accepts either form of a chat reference and returns the resource.
  *
  * Two producers recorded the same conversation two different ways — the notify tool stored
@@ -40,9 +54,13 @@ export function asChatSessionResource(value: string | undefined): string | undef
 	if (!value) {
 		return undefined;
 	}
-	// Already a resource, of any authority: left alone, so a CLI chat is not rewritten as
-	// a local one.
-	return value.includes('://') ? value : chatSessionResourceFor(value);
+	// Already a resource, of any scheme: left alone, so a CLI chat is not rewritten as a
+	// local one. Matched on the scheme rather than on "://" because not every chat resource
+	// has an authority -- a Copilot-mode session is `agent-host-copilotcli:/<uuid>`, with a
+	// single slash, and encoding that as though it were a bare id would produce a resource
+	// addressing nothing. A bare chat id is a UUID and never contains a colon, so this
+	// cannot capture one.
+	return /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : chatSessionResourceFor(value);
 }
 
 /**

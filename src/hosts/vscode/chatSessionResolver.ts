@@ -1,11 +1,22 @@
 import * as vscode from 'vscode';
 import { chatSessionResourceFor, findChatSessionFor } from '../../domain/chatSessionLink';
+import { matchAgentHostSession } from './agentHostIndex';
+import type { AgentHostSession } from './agentHostSessions';
 import type { Session } from '../../domain/types';
 
 export interface ChatSessionResolverDeps {
 	/** Folder holding this workspace's chat transcripts. */
 	chatSessionsUri: vscode.Uri;
 	log: vscode.LogOutputChannel;
+	/**
+	 * Copilot-mode sessions VS Code currently knows about, for the fallback below.
+	 *
+	 * Injected rather than read here so the sqlite access stays in one place and this class
+	 * remains testable without a VS Code profile on disk.
+	 */
+	agentHostSessions?: () => AgentHostSession[];
+	/** The folder this window is working in, used to rule out sessions from another. */
+	workspacePath?: () => string | undefined;
 }
 
 /** Enough to cover any conversation still worth replying to, without reading a whole history. */
@@ -41,6 +52,14 @@ export class ChatSessionResolver {
 		}
 
 		if (!chatSessionId) {
+			// No transcript claims it. A Copilot-mode chat writes none at all, so this is
+			// the normal path for that surface rather than an error -- try it before giving
+			// up, and cache only a definite answer.
+			const viaAgentHost = this.resolveAgentHost(session);
+			if (viaAgentHost) {
+				this.known.set(session.id, viaAgentHost);
+				return viaAgentHost;
+			}
 			// Not cached: the transcript may simply not be written yet.
 			this.deps.log.debug(`No chat transcript claims session "${session.title}".`);
 			return undefined;
@@ -50,6 +69,34 @@ export class ChatSessionResolver {
 		this.known.set(session.id, resource);
 		this.deps.log.info(`Session "${session.title}" belongs to chat ${chatSessionId}.`);
 		return resource;
+	}
+
+	/**
+	 * Falls back to VS Code's own chat index for a Copilot-mode session.
+	 *
+	 * Only reached when no transcript claims the session, which is always the case for that
+	 * surface. {@link matchAgentHostSession} returns nothing unless exactly one session
+	 * fits, so an ambiguous window holds the reply instead of choosing between two
+	 * conversations.
+	 */
+	private resolveAgentHost(session: Session): string | undefined {
+		const list = this.deps.agentHostSessions?.();
+		if (!list || list.length === 0) {
+			return undefined;
+		}
+		const match = matchAgentHostSession(list, {
+			notifiedAt: session.lastNotifyAt,
+			createdAt: session.createdAt,
+			workspacePath: this.deps.workspacePath?.()
+		});
+		if (!match) {
+			this.deps.log.debug(
+				`No single Copilot-mode session matches "${session.title}"; leaving it unresolved rather than guessing.`
+			);
+			return undefined;
+		}
+		this.deps.log.info(`Session "${session.title}" belongs to the Copilot-mode chat "${match.label}".`);
+		return match.resource;
 	}
 
 	/** Transcripts newest first, so a session resumed in a new chat resolves to that one. */

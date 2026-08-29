@@ -25,6 +25,17 @@ export type HarnessKind =
 	| 'vscode-agent-mcp'
 	/** The Copilot CLI runtime hosted inside VS Code. */
 	| 'cli-runtime'
+	/**
+	 * A VS Code "Copilot mode" chat, backed by the Copilot CLI agent host.
+	 *
+	 * Reached exactly like a sidebar chat -- it is a chat tab with an
+	 * `agent-host-copilotcli:` resource -- but it can only ever be *resolved*, never
+	 * stamped at source: VS Code proxies MCP calls to the agent host and the launch
+	 * environment does not survive that hop. This harness is therefore only ever recorded
+	 * together with the chat handle that resolution produced; recording it alone would
+	 * declare a session deliverable with nothing to deliver into.
+	 */
+	| 'vscode-agent-host'
 	/** Another MCP client entirely, which this extension cannot deliver into. */
 	| 'external'
 	/** Not established. Never treated as a guess — replies are held instead. */

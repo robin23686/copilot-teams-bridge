@@ -162,8 +162,14 @@ describe('the deliverable-harness set stays a statement about harnesses', () => 
 		);
 	});
 
-	it('still claims exactly the two chat-backed harnesses', () => {
-		assert.deepEqual([...deliverableHarnesses].sort(), ['vscode-agent-mcp', 'vscode-sidebar']);
+	it('still claims exactly the chat-backed harnesses', () => {
+		// All three are reached by writing into a VS Code chat resource. `cli-runtime` is
+		// absent because its reachability depends on a recorded id and an opt-in, which are
+		// facts about a session rather than about the harness.
+		assert.deepEqual(
+			[...deliverableHarnesses].sort(),
+			['vscode-agent-host', 'vscode-agent-mcp', 'vscode-sidebar']
+		);
 	});
 });
 
