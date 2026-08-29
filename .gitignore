@@ -1,0 +1,9 @@
+node_modules/
+out/
+*.vsix
+.vscode-test/
+*.log
+
+# Real-editor integration runs
+.vscode-test-user-data/
+host-check-results.json

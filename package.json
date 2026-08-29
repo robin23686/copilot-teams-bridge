@@ -1,0 +1,373 @@
+{
+  "name": "copilot-teams-bridge",
+  "displayName": "Copilot Teams Bridge",
+  "description": "Bridges VS Code Copilot Chat with a Microsoft Teams channel: Copilot posts a thread per chat session and your Teams replies are fed back into the same session.",
+  "version": "1.0.0",
+  "publisher": "personal",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0",
+    "node": ">=20"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/src/hosts/vscode/extension.js",
+  "bin": {
+    "copilot-teams-bridge": "./out/src/hosts/cli/demo.js",
+    "copilot-teams-bridge-mcp": "./out/src/hosts/mcp/stdio.js"
+  },
+  "contributes": {
+    "languageModelTools": [
+      {
+        "name": "copilotTeamsBridge_notify",
+        "displayName": "Notify me on Teams",
+        "modelDescription": "Post a status update to the user's Microsoft Teams channel for the current session. Call this at least three times per task: (1) as soon as you begin work, with status 'progress', so a Teams thread is opened and the user is tagged; (2) whenever you are blocked and need a decision, with status 'needs-input' and question set; (3) when you finish, with status 'completed' and a summary of what changed. Reuse the same sessionKey for every update about one task so they all land in one Teams thread. Teams is an ADDITIONAL audience, not a replacement for this chat: always give the full update in your chat reply as well. LEAVE waitForReply UNSET by default. The user can answer in EITHER place, so end your turn normally after posting: a reply typed in this chat continues the conversation natively, and a reply posted in Teams is delivered here automatically. Blocking on waitForReply freezes this chat, so the user cannot answer here even if they are sitting in front of it. Only set waitForReply true when the user has said they are stepping away and you must keep the turn alive for them.",
+        "userDescription": "Posts Copilot status updates to your Teams channel and returns your replies.",
+        "toolReferenceName": "teams",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(comment-discussion)",
+        "tags": [
+          "notification",
+          "teams",
+          "handoff"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "title",
+            "summary",
+            "status"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Short one-line title for the update, e.g. 'Reserve API: added solutionArea filter'. Used as the Teams thread subject the first time it is posted for a session."
+            },
+            "summary": {
+              "type": "string",
+              "description": "Markdown summary of what was done, what changed, and anything the user needs to know. Keep it under ~1500 characters."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "needs-input",
+                "failed",
+                "progress"
+              ],
+              "description": "Outcome of the work so far. Use 'needs-input' together with question when you are blocked on the user."
+            },
+            "question": {
+              "type": "string",
+              "description": "The specific question the user should answer in Teams. Required when status is 'needs-input'."
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Workspace-relative paths of files created or modified, for context in the Teams card."
+            },
+            "sessionKey": {
+              "type": "string",
+              "description": "Stable key identifying the task, used only on the first call before a sessionId exists. Prefer passing sessionId afterwards."
+            },
+            "waitForReply": {
+              "type": "boolean",
+              "description": "Block the turn until the user replies in Teams. Leave unset unless the user is away: blocking prevents them answering in this chat."
+            },
+            "sessionId": {
+              "type": "string",
+              "description": "Exact session id returned by a previous call to this tool. Always pass this on follow-up updates about the same task - it is unambiguous, unlike a key you have to retype."
+            }
+          }
+        }
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "copilotTeamsBridge.servers",
+        "label": "Copilot Teams Bridge"
+      }
+    ],
+    "commands": [
+      {
+        "command": "copilotTeamsBridge.setup",
+        "title": "Teams Bridge: Set Up (pick team and channel)",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.startSession",
+        "title": "Teams Bridge: Start a Session",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.start",
+        "title": "Teams Bridge: Start Listening for Replies",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.stop",
+        "title": "Teams Bridge: Stop Listening for Replies",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.sendTestNotification",
+        "title": "Teams Bridge: Send Test Notification",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.showSessions",
+        "title": "Teams Bridge: Show Sessions and Threads",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.pollNow",
+        "title": "Teams Bridge: Check Teams for Replies Now",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.extendSession",
+        "title": "Teams Bridge: Extend a Session",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.renameSession",
+        "title": "Teams Bridge: Rename a Session",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.probeHarness",
+        "title": "Teams Bridge: Test a Harness Type",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.showRouting",
+        "title": "Teams Bridge: Show How Replies Will Be Routed",
+        "category": "Copilot Teams Bridge"
+      },
+      {
+        "command": "copilotTeamsBridge.resetLocalState",
+        "title": "Teams Bridge: Reset All Local State"
+      }
+    ],
+    "configuration": {
+      "title": "Copilot Teams Bridge",
+      "properties": {
+        "copilotTeamsBridge.transport": {
+          "type": "string",
+          "enum": [
+            "agency",
+            "file"
+          ],
+          "enumDescriptions": [
+            "Agency Teams MCP. Fully two-way with no app registration, no admin consent and no extra services. Requires the Agency CLI.",
+            "Local files on disk. Two-way loopback used for testing without Teams."
+          ],
+          "default": "agency",
+          "description": "How the bridge talks to Teams."
+        },
+        "copilotTeamsBridge.agency.command": {
+          "type": "string",
+          "default": "agency",
+          "description": "Command that launches the Agency CLI. Change only if it is not on your PATH."
+        },
+        "copilotTeamsBridge.file.directory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory the bridge reads replies from. For the 'hybrid' transport point this at the OneDrive-synced folder your Power Automate flow writes to. Defaults to a folder in global storage."
+        },
+        "copilotTeamsBridge.pollIntervalSeconds": {
+          "type": "number",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 300,
+          "description": "How often to check active Teams threads for new replies."
+        },
+        "copilotTeamsBridge.waitForReplyTimeoutSeconds": {
+          "type": "number",
+          "default": 7200,
+          "minimum": 30,
+          "maximum": 7200,
+          "description": "How long the notify tool blocks when waitForReply is true. Default is 2 hours, the maximum Copilot allows, so your reply resumes the same session rather than opening a new chat request."
+        },
+        "copilotTeamsBridge.autoSubmitReplies": {
+          "type": "boolean",
+          "default": true,
+          "description": "When a Teams reply arrives for a session that is not actively waiting, submit it to Copilot Chat automatically. When false, the reply is only pre-filled in the chat input box."
+        },
+        "copilotTeamsBridge.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start listening for Teams replies as soon as the extension activates."
+        },
+        "copilotTeamsBridge.sessionIdleMinutes": {
+          "type": "number",
+          "default": 120,
+          "minimum": 1,
+          "description": "How long a Teams thread keeps being watched after its last activity. Default is 2 hours, matching the longest a Copilot turn can stay blocked, so a reply within the window continues the same session. After it lapses a notice is posted saying replies are no longer read."
+        },
+        "copilotTeamsBridge.teamId": {
+          "type": "string",
+          "default": "",
+          "description": "Teams team (group) id that owns the notification channel."
+        },
+        "copilotTeamsBridge.channelId": {
+          "type": "string",
+          "default": "",
+          "description": "Teams channel id, e.g. 19:abc...@thread.tacv2."
+        },
+        "copilotTeamsBridge.replyDelivery": {
+          "type": "string",
+          "enum": [
+            "guarded",
+            "always",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Send the reply automatically only when one session is active. With several running, leave it in the chat input so you can check it reached the right conversation.",
+            "Always send automatically. Fastest, but a reply can be acted on by the wrong chat when several sessions are running.",
+            "Never send automatically. Every reply waits in the chat input."
+          ],
+          "default": "guarded",
+          "description": "Whether a Teams reply is sent as soon as it arrives, or left in the chat input for you to check first."
+        },
+        "copilotTeamsBridge.turnUpdates": {
+          "type": "string",
+          "enum": [
+            "everyTurn",
+            "milestonesOnly"
+          ],
+          "enumDescriptions": [
+            "Post a summary to Teams as each Copilot turn finishes, so the thread follows the whole conversation. When Copilot reports a turn itself, that update is used and the automatic summary is skipped, so nothing is said twice.",
+            "Only the updates Copilot chooses to send — start, blocked, finished. Quieter, but a turn that ends without one leaves the thread silent."
+          ],
+          "default": "everyTurn",
+          "description": "How much of a conversation reaches Teams. Summaries only ever go into a chat's existing thread, so a chat that was never announced stays silent — and Copilot's internal reasoning is never included."
+        },
+        "copilotTeamsBridge.turnSummaryCharacters": {
+          "type": "number",
+          "default": 600,
+          "minimum": 120,
+          "maximum": 4000,
+          "description": "How much of each answer a turn summary may carry before it is cut at a sentence end. Summaries are read on a phone, so this is deliberately short."
+        },
+        "copilotTeamsBridge.replyTargeting": {
+          "type": "string",
+          "enum": [
+            "editorGroup",
+            "sidebarOnly"
+          ],
+          "enumDescriptions": [
+            "Bring the chat that owns the reply to the front by opening it as an editor tab, then send. This is the only way VS Code lets one specific chat be targeted. A chat currently in the side bar is relocated to an editor tab; the conversation is kept.",
+            "Never move a chat. A reply is sent only when its own chat already happens to be the one you are working in, and is otherwise kept until you open that chat yourself."
+          ],
+          "default": "editorGroup",
+          "description": "How to reach the chat a Teams reply belongs to when it is not already the one in front."
+        },
+        "copilotTeamsBridge.deliveryConfirmSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 300,
+          "description": "How long the target chat's transcript must be silent — no new bytes, no mtime change, no file arriving at all — before an unfound delivery marker is treated as unproven. This is the QUIET window, not a hard cap on confirmation: any change in the transcript resets it, so a cold chat whose agent is still starting up (MCP servers, model call) keeps being waited for. A higher value is more patient. Raise this on a slow machine."
+        },
+        "copilotTeamsBridge.unroutableReplies": {
+          "type": "string",
+          "enum": [
+            "hold",
+            "focusedChat"
+          ],
+          "enumDescriptions": [
+            "Leave the reply in Teams and say so there. Nothing is put into a chat that may not own the task.",
+            "Send it to whichever chat is focused. Faster when you only ever run one chat, but a reply can land in an unrelated conversation."
+          ],
+          "default": "hold",
+          "description": "What to do when the chat that started a task cannot be identified — for example a Copilot CLI session, which keeps no transcript to match against."
+        },
+        "copilotTeamsBridge.announceSessions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open a Teams thread automatically when a Copilot session starts. Without this, a session is announced only if the model chooses to call the notify tool, which it does not always do."
+        },
+        "copilotTeamsBridge.announceMinPromptLength": {
+          "type": "number",
+          "default": 30,
+          "minimum": 0,
+          "description": "Shortest prompt that is worth announcing. Keeps greetings and one-word questions out of Teams."
+        },
+        "copilotTeamsBridge.acknowledgeReplies": {
+          "type": "boolean",
+          "default": true,
+          "description": "Post a short \"working on this\" note in Teams when your reply is picked up, so you know it arrived before the agent reports back."
+        },
+        "copilotTeamsBridge.expiredGraceHours": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "How long an expired thread is still watched. Zero (the default) means an expired thread is not watched at all: replies posted while it is expired are ignored, and the session is only reactivated from VS Code — by a turn in that chat, or the extend command. Setting a value above 0 is an explicit opt-in to the old behaviour where a Teams reply within that window resumes the session."
+        },
+        "copilotTeamsBridge.relayAgentReplies": {
+          "type": "boolean",
+          "default": true,
+          "description": "Deliver Teams replies for agent and CLI sessions into Copilot Chat. Without this they wait in a queue until an agent happens to check, because an MCP server cannot wake a session whose turn has ended."
+        },
+        "copilotTeamsBridge.mentionOn": {
+          "type": "string",
+          "enum": [
+            "keyMoments",
+            "everyMessage",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Only tag you on the first message of a thread and on messages that need your reply. Every other update posts into the thread without a mention, so your Teams activity feed pings only for the moments that need attention.",
+            "Tag you on every message the bridge posts. Restores the earlier behaviour where each update raises an activity-feed notification.",
+            "Never tag you. Messages still appear in the thread, but nothing raises an activity-feed ping — even the first message of a new thread."
+          ],
+          "default": "keyMoments",
+          "description": "When the bridge @mentions you in Teams. The default only tags you for the start of a thread and updates that need your input, so progress and completion notices no longer flood your Teams activity feed."
+        },
+        "copilotTeamsBridge.registerCliServer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Register the bundled MCP server for Copilot CLI sessions by writing ~/.copilot/mcp-config.json, so a CLI run outside VS Code can post to Teams. When off, the bridge's entry is removed from that file, leaving other MCP servers untouched."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "npm run clean && tsc -p ./",
+    "clean": "node scripts/prune-orphans.js",
+    "watch": "tsc -watch -p ./",
+    "lint": "node scripts/check-layers.js && eslint src test --ext .ts",
+    "lint:layers": "node scripts/check-layers.js",
+    "pretest": "npm run compile",
+    "test": "node --test out/test/*.test.js",
+    "package": "npx --yes @vscode/vsce package --no-dependencies",
+    "test:host": "npm run compile && node out/integration/runTests.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.9",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vscode/test-electron": "^3.1.0",
+    "eslint": "^8.57.1",
+    "typescript": "^5.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robin23686/copilot-teams-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/robin23686/copilot-teams-bridge/issues"
+  },
+  "homepage": "https://github.com/robin23686/copilot-teams-bridge#readme"
+}
