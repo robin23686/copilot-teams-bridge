@@ -135,6 +135,61 @@ discard it, and offer no way to bring the session back.
 
 ---
 
+## 5. Resuming a CLI session can write into one that is still running
+
+**Severity:** high — data risk. **The feature is withheld in 1.1.0 because of this.**
+
+`copilot --session-id <id> -p "…"` resumes a **finished** session by starting a new process.
+It is *not* a channel into a running one, and both share the same session id.
+
+**Evidence — 2026-08-29 12:46:**
+
+| Time | Process | Log line |
+|---|---|---|
+| 12:43:39 | PID 54100 | `Registering foreground session: d45ca473…` (the user's terminal) |
+| 12:46:14 | PID 34008 | `cli.telemetry (kind: session_resume)` for the same id |
+
+Three consequences, all observed:
+
+1. **The user never sees the reply.** The foreground process renders from its own in-memory
+   conversation and does not re-read the store, so a turn appended by another process is
+   invisible in the terminal the user is watching.
+2. **The resumed agent has no history.** The store held one turn — the injected reply at
+   index 0 — because the live process had not flushed its conversation. The agent answered
+   from the marker text alone.
+3. **Turn-index collision.** `turns` declares `UNIQUE(session_id, turn_index)` and the
+   injected turn took index 0. When the live session flushes its own first turn it wants
+   the same index, on a session that is still running.
+
+**Why it is not simply gated:** the obvious fix is to refuse when the session is live, but
+that could not be verified — by the time the fix was written, no live session existed to
+test against, and an unverified safety gate on a data-corruption path is worse than no
+feature. `CliRuntimeAdapter` and its tests remain in the tree, unregistered, as the starting
+point.
+
+Turn count is **not** a usable liveness signal: sessions flush lazily, so a live session and
+a finished one both show turns at different moments.
+
+**Fix direction:** map a running `copilot` process to its session (the pid appears in
+`~/.copilot/logs/process-<epoch>-<pid>.log`, which records `Registering foreground session:
+<id>`), refuse while it holds the id, and fall back to queueing — which is already correct
+for a live agent, since it can collect via `teams_check_replies`.
+
+---
+
+## 6. The CLI footer cannot know whether resume is enabled
+
+**Severity:** low, and currently harmless.
+
+The `cli-runtime` footer — *"Your reply is queued for the Copilot CLI session that started
+this task"* — is rendered by the **MCP server**, a separate process that computes
+`replyReachability` without `ReplyRoutingOptions` and cannot see VS Code settings.
+
+While issue #5 keeps resume withheld the wording is exactly right. It becomes wrong the
+moment resume ships, so the two must be resolved together.
+
+---
+
 ## Cross-cutting note
 
 Issues #1, #2 and #3 chained together in a single event: sleep triggered a false respawn,

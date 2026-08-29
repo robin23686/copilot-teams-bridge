@@ -49,6 +49,17 @@ export interface McpServerOptions {
 	 */
 	harness?: HarnessKind;
 	/**
+	 * The `copilot` CLI session id this process was spawned inside, if any.
+	 *
+	 * Read from `COPILOT_AGENT_SESSION_ID`, which the CLI exports and a spawned MCP server
+	 * inherits. Stamped onto sessions this process opens so a reply can later be routed by
+	 * resuming that session — the only route into a conversation with no VS Code chat.
+	 *
+	 * Recording it is inert on its own: whether it may be used is a separate, opt-in
+	 * decision made in the extension.
+	 */
+	cliSessionId?: string;
+	/**
 	 * When set, this server process is bound to exactly one session key.
 	 *
 	 * Listing returns only that session, and reply-check scoping arguments naming a
@@ -574,7 +585,10 @@ export class McpServer {
 			harness: this.harness,
 			confidence: 'exact',
 			capturedBy: 'mcp-ingest',
-			capturedAt: new Date().toISOString()
+			capturedAt: new Date().toISOString(),
+			// Only meaningful for the CLI, and only when the CLI told us. Undefined
+			// everywhere else, so no other harness gains a field it cannot use.
+			cliSessionId: this.harness === 'cli-runtime' ? this.options.cliSessionId : undefined
 		};
 	}
 }

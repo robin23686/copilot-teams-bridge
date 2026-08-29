@@ -275,3 +275,20 @@ function truncate(value: string, max: number): string {
 	return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
 }
 
+
+/**
+ * The line that identifies a reply delivered from Teams, in a chat transcript or a CLI
+ * session.
+ *
+ * Doubles as the proof of delivery: it names the session and the sender, so finding it in a
+ * given conversation's transcript is what confirms the request reached *that* conversation
+ * rather than merely being written somewhere.
+ *
+ * Defined here, in the domain, because more than one delivery route now emits it -- a chat
+ * write and a resumed CLI session. Two copies of this string would drift, and the copy that
+ * drifted would be the one delivery is confirmed against, so confirmation would start
+ * failing for replies that had in fact landed.
+ */
+export function deliveryMarker(sessionTitle: string, from: string): string {
+	return `[Teams reply \u00b7 session "${sessionTitle}" \u00b7 from ${from}]`;
+}

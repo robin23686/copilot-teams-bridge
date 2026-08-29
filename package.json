@@ -2,7 +2,7 @@
   "name": "copilot-teams-bridge",
   "displayName": "Copilot Teams Bridge",
   "description": "Bridges VS Code Copilot Chat with a Microsoft Teams channel: Copilot posts a thread per chat session and your Teams replies are fed back into the same session.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "personal",
   "private": true,
   "license": "MIT",

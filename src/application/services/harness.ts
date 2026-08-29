@@ -1,4 +1,5 @@
 import type { ChatHandle, HarnessKind, InboundReply, Session, SessionIdentity } from '../../domain/types';
+import { isAgentHostResource } from '../../domain/chatSessionLink';
 
 /** A reply paired with the session it belongs to, ready to be handed to a harness. */
 export interface DeliverableReply {
@@ -50,7 +51,50 @@ export function isRetryable(outcome: DeliveryOutcome): boolean {
  * the harness itself cannot be reached from this window: no amount of waiting changes that,
  * so the reply would be re-read on every pass forever. Those are answered once and released.
  */
-export function worthRetrying(outcome: DeliveryOutcome, identity: SessionIdentity): boolean {
+/**
+ * Extra facts that can make a session reachable beyond what its harness alone implies.
+ *
+ * Every field is optional and every default is "no", so omitting this argument reproduces
+ * the behaviour that existed before CLI resume was contemplated. That is deliberate: the
+ * options thread through call sites that have nothing to do with the CLI, and those sites
+ * must keep behaving identically without having to be updated in step with this file.
+ */
+export interface ReplyRoutingOptions {
+	/**
+	 * Whether resuming a `copilot` CLI session is permitted.
+	 *
+	 * Off unless the user has opted in. Resuming spawns a non-interactive agent run, which
+	 * the CLI only allows with `--allow-all-tools`, so this is a trust decision about the
+	 * Teams channel rather than a convenience toggle.
+	 */
+	cliResumeEnabled?: boolean;
+}
+
+/**
+ * Whether a reply for this session can be delivered by resuming its CLI session.
+ *
+ * Deliberately *not* expressed by adding `cli-runtime` to {@link deliverableHarnesses}.
+ * That set is consulted by {@link replyReachability}, which decides the footer on every
+ * message, so widening it would promise a reply could be routed for every CLI session --
+ * including ones with no recorded id, and including when the user has not opted in. That is
+ * precisely the shape of the agent-MCP regression: deliverable by policy, unroutable in
+ * practice. Reachability here is a property of the individual session, so it is asked of
+ * the session.
+ */
+export function canResumeCliSession(identity: SessionIdentity, options?: ReplyRoutingOptions): boolean {
+	return (
+		options?.cliResumeEnabled === true &&
+		identity.harness === 'cli-runtime' &&
+		typeof identity.cliSessionId === 'string' &&
+		identity.cliSessionId.length > 0
+	);
+}
+
+export function worthRetrying(
+	outcome: DeliveryOutcome,
+	identity: SessionIdentity,
+	options?: ReplyRoutingOptions
+): boolean {
 	if (!isRetryable(outcome)) {
 		return false;
 	}
@@ -61,7 +105,11 @@ export function worthRetrying(outcome: DeliveryOutcome, identity: SessionIdentit
 	// Asked of the harness alone: a CLI session may well have an exact chat recorded, and
 	// it is still not reachable from here. Confidence answers "which chat?", not "can we
 	// get to it?" — conflating the two is what would keep an unanswerable reply forever.
-	return identity.harness === 'unknown' || DELIVERABLE_HARNESSES.has(identity.harness);
+	return (
+		identity.harness === 'unknown' ||
+		DELIVERABLE_HARNESSES.has(identity.harness) ||
+		canResumeCliSession(identity, options)
+	);
 }
 
 /**
@@ -209,6 +257,8 @@ export function describeHarness(harness: SessionIdentity['harness']): string {
 			return 'a Copilot agent session in VS Code';
 		case 'cli-runtime':
 			return 'the Copilot CLI runtime';
+		case 'vscode-agent-host':
+			return 'a Copilot-mode chat in VS Code';
 		case 'external':
 			return 'a Copilot client outside this VS Code window';
 		default:
@@ -236,7 +286,9 @@ export function identityOf(session: Session): SessionIdentity {
 
 	if (legacyChat) {
 		return {
-			harness: 'vscode-sidebar',
+			// A Copilot-mode chat is recognisable from the reference alone, and calling it
+			// "the Copilot Chat panel" in a message to the user would be plainly wrong.
+			harness: isAgentHostResource(session.chatSessionResource) ? 'vscode-agent-host' : 'vscode-sidebar',
 			chat: legacyChat,
 			confidence: 'derived',
 			capturedBy: 'resolver',
@@ -265,7 +317,11 @@ export function identityOf(session: Session): SessionIdentity {
  */
 const DELIVERABLE_HARNESSES: ReadonlySet<SessionIdentity['harness']> = new Set([
 	'vscode-sidebar',
-	'vscode-agent-mcp'
+	'vscode-agent-mcp',
+	// Safe to declare here only because a session is never recorded as `vscode-agent-host`
+	// without the chat handle that resolution produced -- see HarnessKind. `canDeliver`
+	// still checks the handle on the individual identity.
+	'vscode-agent-host'
 ]);
 
 /**
@@ -293,8 +349,13 @@ export const deliverableHarnesses: ReadonlySet<HarnessKind> = DELIVERABLE_HARNES
  */
 export type ReplyReachability = 'yes' | 'no' | 'unknown';
 
-export function replyReachability(identity: SessionIdentity): ReplyReachability {
+export function replyReachability(identity: SessionIdentity, options?: ReplyRoutingOptions): ReplyReachability {
 	if (DELIVERABLE_HARNESSES.has(identity.harness) && identity.confidence !== 'unknown') {
+		return 'yes';
+	}
+	// A CLI session is reachable only when it carries a resumable id and the user has
+	// opted in. Both are session-level facts, so neither can be inferred from the harness.
+	if (canResumeCliSession(identity, options)) {
 		return 'yes';
 	}
 	if (identity.harness === 'unknown') {
@@ -315,6 +376,6 @@ export function replyReachability(identity: SessionIdentity): ReplyReachability 
  * Shares its inputs with the routing decision on purpose: if a reply would be held rather
  * than delivered, the thread said so in advance.
  */
-export function repliesReachChat(identity: SessionIdentity): boolean {
-	return replyReachability(identity) === 'yes';
+export function repliesReachChat(identity: SessionIdentity, options?: ReplyRoutingOptions): boolean {
+	return replyReachability(identity, options) === 'yes';
 }

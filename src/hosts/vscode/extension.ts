@@ -23,6 +23,9 @@ import { NotifyTool, type NotifyToolParams } from './notifyTool';
 import { BridgeMcpProvider, MCP_PROVIDER_ID } from './mcpProvider';
 import { ChatSessionWatcher } from './chatSessionWatcher';
 import { ChatSessionResolver } from './chatSessionResolver';
+import { confirmAgentHostTurn, listAgentHostSessions, workspaceStateDbPath } from './agentHostIndex';
+import { AgentHostWatcher } from './agentHostWatcher';
+import { isAgentHostResource, type AgentHostSession } from './agentHostSessions';
 import { AgentReplyRelay } from './agentReplyRelay';
 import { findBridgeServerNames } from './legacyMcpEntry';
 import { announceSession, resetAnnouncements, titleFromPrompt } from './sessionStarter';
@@ -52,6 +55,7 @@ let extensionContext: vscode.ExtensionContext;
 let mcpProvider: BridgeMcpProvider | undefined;
 let sessionWatcher: ChatSessionWatcher | undefined;
 let agentRelay: AgentReplyRelay | undefined;
+let agentHostWatcher: AgentHostWatcher | undefined;
 let harnesses: HarnessRegistry;
 /**
  * The one on-disk record of reply ids already handed to a chat.
@@ -78,7 +82,18 @@ export function activate(context: vscode.ExtensionContext): void {
 				? revealChatSessionInEditor(resource, log, trace)
 				: Promise.resolve(false),
 		confirmLanded: (resource, marker) =>
-			confirmLandedIn(chatSessionsUri(context), resource, marker, config.deliveryConfirmMs)
+			isAgentHostResource(resource)
+				? // A Copilot-mode chat writes no transcript, so the usual marker search would
+					// find nothing and report a false failure for every delivery. Its own tab
+					// title and request timing are the evidence available for that surface.
+					confirmAgentHostTurn({
+						sessions: () => agentHostSessions(context),
+						resource,
+						writtenAt: Date.now(),
+						ceilingMs: config.deliveryConfirmMs,
+						activeTabLabel: () => vscode.window.tabGroups?.activeTabGroup?.activeTab?.label
+					})
+				: confirmLandedIn(chatSessionsUri(context), resource, marker, config.deliveryConfirmMs)
 	});
 	harnesses = new HarnessRegistry(
 		new HoldAdapter({
@@ -91,6 +106,12 @@ export function activate(context: vscode.ExtensionContext): void {
 					: undefined
 		})
 	).register(new SidebarAdapter({ injector, mayAutoSubmit, log }));
+	// CliRuntimeAdapter is deliberately NOT registered. See docs/known-issues.md: resuming
+	// addresses a *finished* session, and a live one shares the same id, so a reply can be
+	// written into a conversation another process is still holding. Detecting liveness
+	// could not be verified against a running session, and an unverified safety gate is
+	// worse than withholding the feature. The adapter and its tests stay so the fix has a
+	// starting point.
 
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'copilotTeamsBridge.showSessions';
@@ -248,13 +269,40 @@ function startWatchers(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(sessionWatcher);
 	void sessionWatcher.start();
 
+	// Copilot-mode chats write no transcript, so the watcher above is structurally blind to
+	// them: they reached Teams only when the agent inside chose to call the notify tool.
+	// VS Code's own session index is the signal that closes that gap.
+	agentHostWatcher?.dispose();
+	agentHostWatcher = new AgentHostWatcher({
+		sessions: () => agentHostSessions(context),
+		announce: (request) => announceSession({ bridge: () => ensureBridge(context), log }, request),
+		touch: (sessionKey) => {
+			const activity = ensureBridge(context).recordActivity(sessionKey, 'chat-turn');
+			if (activity?.revived) {
+				void ensureBridge(context).postResumedNotice(activity.session);
+			}
+		},
+		enabled: () => config.announceSessions,
+		intervalMs: () => config.pollIntervalMs,
+		log
+	});
+	context.subscriptions.push(agentHostWatcher);
+	agentHostWatcher.start();
+
 	// An MCP server cannot wake an agent whose turn has ended, so a reply sat in its queue
 	// until the user came back and typed something — which defeats replying from a phone.
 	// The extension can open a chat request and is always running, so it delivers on the
 	// server's behalf.
 	// An agent session records no chat, so its reply has to be addressed by finding the
 	// conversation that made the call.
-	const chatSessions = new ChatSessionResolver({ chatSessionsUri: chatSessionsUri(context), log });
+	const chatSessions = new ChatSessionResolver({
+		chatSessionsUri: chatSessionsUri(context),
+		log,
+		// A Copilot-mode chat leaves no transcript to search, so VS Code's own index is the
+		// only record of it. Passed as a function because the index changes as the user works.
+		agentHostSessions: () => agentHostSessions(context),
+		workspacePath: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+	});
 
 	agentRelay?.dispose();
 	agentRelay = new AgentReplyRelay({
@@ -664,6 +712,17 @@ async function resetLocalState(context: vscode.ExtensionContext): Promise<void> 
 function chatSessionsUri(context: vscode.ExtensionContext): vscode.Uri {
 	const base = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, '..', '..');
 	return vscode.Uri.joinPath(base, '..', 'chatSessions');
+}
+
+/**
+ * The Copilot-mode sessions VS Code currently knows about.
+ *
+ * Read on demand rather than cached: the user opens and closes these while the bridge runs,
+ * and a stale list would either miss the session that made a call or offer one that has
+ * gone. Every failure inside returns an empty list, which degrades to holding the reply.
+ */
+function agentHostSessions(context: vscode.ExtensionContext): AgentHostSession[] {
+	return listAgentHostSessions({ stateDbPath: workspaceStateDbPath(chatSessionsUri(context)), log });
 }
 
 function ensureBridge(context: vscode.ExtensionContext): Bridge {

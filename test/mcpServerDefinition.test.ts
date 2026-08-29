@@ -27,7 +27,9 @@ function fakeConfig(): BridgeConfig {
 		expiredGraceMs: 0,
 		autoStart: true,
 		sessionIdleMs: 7_200_000,
-		mentionPolicy: 'keyMoments'
+		mentionPolicy: 'keyMoments',
+	resumeCliSessions: false,
+	cliResumeTimeoutMs: 900_000
 	};
 }
 
