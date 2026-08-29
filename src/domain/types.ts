@@ -55,6 +55,19 @@ export interface SessionIdentity {
 	confidence: 'exact' | 'derived' | 'unknown';
 	capturedBy: 'chat-watcher' | 'notify-tool' | 'mcp-ingest' | 'resolver';
 	capturedAt: string;
+	/**
+	 * The `copilot` CLI session this bridge session belongs to, when it has one.
+	 *
+	 * The CLI exports `COPILOT_AGENT_SESSION_ID`, and an MCP server it spawns inherits it,
+	 * so this is recorded at source rather than correlated afterwards from working
+	 * directories and timestamps. It is the handle `copilot --session-id` resumes, which is
+	 * the only route into a conversation that has no VS Code chat behind it.
+	 *
+	 * Optional, and absent for every harness that is not the CLI. Recording it changes
+	 * nothing on its own: whether it may be *used* is decided separately, by
+	 * {@link canResumeCliSession}.
+	 */
+	cliSessionId?: string;
 }
 
 /** What last kept a session alive, which the sliding idle window is measured from. */
@@ -97,6 +110,17 @@ export interface Session {
 	 * An expired session is no longer polled until it is explicitly extended.
 	 */
 	expiredAt?: string;
+	/**
+	 * Set once the "this thread has paused" notice has actually reached Teams.
+	 *
+	 * Kept separate from {@link expiredAt} because expiring and *saying so* can fail
+	 * independently. A machine waking from sleep expires its idle sessions on the first
+	 * poll, which is exactly when the Teams transport is least likely to be up; the notice
+	 * then threw, and because `expiredAt` was already persisted the session never re-entered
+	 * the expiring set, so the user was never told. Recording delivery separately lets the
+	 * notice be retried until it lands.
+	 */
+	expiryNoticeAt?: string;
 	/** Ids of replies already delivered, used for de-duplication. */
 	seenReplyIds: string[];
 	status: NotificationStatus;

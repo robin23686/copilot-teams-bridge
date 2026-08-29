@@ -8,7 +8,7 @@ import { FileTransport } from '../../infrastructure/transports/fileTransport';
 import { JsonThreadRegistry } from '../../infrastructure/threadRegistry';
 import { mergeForWrite } from '../../domain/policies/sessionMerge';
 import { mentionPolicyFromEnv } from './mentionPolicy';
-import { harnessFromEnv } from './harnessEnv';
+import { harnessFromEnv, cliSessionIdFromEnv } from './harnessEnv';
 import { delegatedFromEnv, startBridgeUnlessDelegated } from './delegatedMode';
 import type { SessionStore, ThreadedTransport } from '../../application/ports';
 import type { Session } from '../../domain/types';
@@ -108,6 +108,9 @@ function main(): void {
 		// The launcher tells us which surface it is; unset falls through to "unknown", which
 		// preserves the pre-existing behaviour of not stamping anything.
 		harness: harnessFromEnv(process.env.COPILOT_TEAMS_BRIDGE_HARNESS),
+		// The CLI exports its own session id and we inherit it. Recorded so a reply can
+		// later be delivered by resuming that session; unset for every other launcher.
+		cliSessionId: cliSessionIdFromEnv(process.env.COPILOT_AGENT_SESSION_ID),
 		// Optional single-session binding. When set, every tool call in this process is
 		// scoped to that one session — a shared server cannot leak state between agents.
 		// The launcher does not have a per-session key to give at spawn time yet, but the

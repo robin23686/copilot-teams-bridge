@@ -15,6 +15,8 @@ import { summariseTurn } from '../../domain/chatTurns';
 import { confirmLandedIn, revealChatSessionInEditor } from './chatReveal';
 import { HoldAdapter } from './adapters/holdAdapter';
 import { SidebarAdapter } from './adapters/sidebarAdapter';
+import { CliRuntimeAdapter } from './adapters/cliRuntimeAdapter';
+import { runCopilotCli } from './adapters/copilotCliRunner';
 import { ChatInjector } from './chatInjector';
 import { describeRouting, probeHarness } from './harnessProbe';
 import type { InjectionOutcome } from './chatInjector';
@@ -90,7 +92,25 @@ export function activate(context: vscode.ExtensionContext): void {
 					? injector.inject(deliverable, mayAutoSubmit())
 					: undefined
 		})
-	).register(new SidebarAdapter({ injector, mayAutoSubmit, log }));
+	).register(new SidebarAdapter({ injector, mayAutoSubmit, log }))
+		.register(
+			new CliRuntimeAdapter({
+				// Read per call, so switching the setting off takes effect immediately
+				// rather than at the next window reload.
+				enabled: () => config.resumeCliSessions,
+				timeoutMs: () => config.cliResumeTimeoutMs,
+				run: runCopilotCli,
+				report: async (session, text) => {
+					await ensureBridge(context).notify({
+						sessionKey: session.key,
+						title: session.title,
+						summary: text,
+						status: 'progress'
+					});
+				},
+				log
+			})
+		);
 
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'copilotTeamsBridge.showSessions';

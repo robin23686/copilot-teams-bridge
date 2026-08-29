@@ -338,6 +338,18 @@
           "type": "boolean",
           "default": true,
           "description": "Register the bundled MCP server for Copilot CLI sessions by writing ~/.copilot/mcp-config.json, so a CLI run outside VS Code can post to Teams. When off, the bridge's entry is removed from that file, leaving other MCP servers untouched."
+        },
+        "copilotTeamsBridge.resumeCliSessions": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Let a Teams reply resume the copilot CLI session that started the task.\n\n**Security:** resuming runs the CLI non-interactively, which the CLI only permits with --allow-all-tools. A reply therefore becomes an unattended agent run with full tool and file permissions on this machine, instead of text in a chat you can see before it acts. The bridge does not filter replies by author, so anyone who can post in the configured Teams channel can trigger one. Leave this off unless every member of that channel is trusted to run commands here.\n\nWith it off, replies for CLI sessions are queued for the agent to collect, exactly as before."
+        },
+        "copilotTeamsBridge.cliResumeTimeoutSeconds": {
+          "type": "number",
+          "default": 900,
+          "minimum": 30,
+          "maximum": 3600,
+          "description": "How long a resumed Copilot CLI run may take before the bridge gives up on it. Only used when resumeCliSessions is enabled."
         }
       }
     }

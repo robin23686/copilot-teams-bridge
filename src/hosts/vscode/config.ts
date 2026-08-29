@@ -42,6 +42,16 @@ export interface BridgeConfig {
 	expiredGraceMs: number;
 	autoStart: boolean;
 	sessionIdleMs: number;
+	/**
+	 * Whether a Teams reply may resume the `copilot` CLI session that started the task.
+	 *
+	 * Off by default, and deliberately so: resuming runs the CLI non-interactively, which
+	 * requires `--allow-all-tools`, so a reply becomes an unattended agent run with full
+	 * permissions rather than text in a chat someone is looking at.
+	 */
+	resumeCliSessions: boolean;
+	/** How long a resumed CLI run may take before it is abandoned. */
+	cliResumeTimeoutMs: number;
 	/** When to @mention the user in Teams. See {@link MentionPolicy}. */
 	mentionPolicy: MentionPolicy;
 }
@@ -74,6 +84,8 @@ export function readConfig(context: vscode.ExtensionContext): BridgeConfig {
 		expiredGraceMs: Math.max(0, config.get<number>('expiredGraceHours', 0)) * 60 * 60 * 1000,
 		autoStart: config.get<boolean>('autoStart', true),
 		sessionIdleMs: Math.max(1, config.get<number>('sessionIdleMinutes', 120)) * 60 * 1000,
+		resumeCliSessions: config.get<boolean>('resumeCliSessions', false),
+		cliResumeTimeoutMs: clamp(config.get<number>('cliResumeTimeoutSeconds', 900), 30, 3600) * 1000,
 		mentionPolicy: config.get<MentionPolicy>('mentionOn', 'keyMoments')
 	};
 }

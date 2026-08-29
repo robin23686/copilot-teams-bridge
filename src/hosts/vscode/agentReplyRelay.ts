@@ -272,13 +272,22 @@ export class AgentReplyRelay {
 	}
 
 	/**
-	 * Marks sessions that have gone quiet in the MCP store as expired.
+	 * Marks sessions that have gone quiet in the MCP store as expired, and tells the user.
 	 *
 	 * Mirrors Bridge.expireIdleSessions for the second store this relay owns: without it,
 	 * an agent/CLI session recorded in ~/.copilot-teams-bridge/sessions.json is polled
 	 * forever, so a reply typed hours after the user walked away still reaches a chat.
 	 * Once expired, the session's queued pending replies are dropped so nothing that was
 	 * queued while it was actively being expired is later delivered by mistake.
+	 *
+	 * Expiring and announcing are two steps, not one, because they fail independently.
+	 * Marking is a local write and effectively cannot fail; the notice is a network call to
+	 * Teams. Expiry is most likely to be detected on the first poll after the editor starts
+	 * or the machine wakes — precisely when the transport is least likely to be up. Doing
+	 * both in one pass meant a failed post was lost for good: `expiredAt` was already
+	 * persisted, so the session never appeared in the expiring set again, and the thread was
+	 * left silently unwatched while still inviting a reply. Announcing is therefore driven
+	 * by `expiryNoticeAt` and retried every pass until it lands.
 	 */
 	private async expireIdleSessions(): Promise<void> {
 		const idleMs = this.deps.idleMs?.();
@@ -295,34 +304,79 @@ export class AgentReplyRelay {
 				session.lastActivityAt !== undefined &&
 				Date.parse(session.lastActivityAt) < cutoff
 		);
-		if (expiring.length === 0) {
+		if (expiring.length > 0) {
+			const timestamp = new Date().toISOString();
+			for (const session of expiring) {
+				session.expiredAt = timestamp;
+				// Anything queued in the meantime must be dropped, or an instruction the user
+				// posted just before the window lapsed would be delivered into a chat that has
+				// been told the thread is no longer being read.
+				session.pending = undefined;
+				this.deps.log.info(`Agent session "${session.title}" expired after going quiet`);
+			}
+			await this.write(sessions);
+		}
+
+		await this.announceExpiry();
+	}
+
+	/**
+	 * Posts the pause notice for any expired session that has not had one delivered.
+	 *
+	 * Runs every pass, so a notice that could not be posted when the session expired — a
+	 * dead transport, a lapsed Agency session — is sent as soon as Teams is reachable again
+	 * rather than being dropped. `expiryNoticeAt` is written only after the post resolves,
+	 * which is what makes the retry terminate exactly once the user has been told.
+	 */
+	private async announceExpiry(): Promise<void> {
+		if (!this.deps.onExpired) {
 			return;
 		}
-		const timestamp = new Date().toISOString();
-		for (const session of expiring) {
-			session.expiredAt = timestamp;
-			// Anything queued in the meantime must be dropped, or an instruction the user
-			// posted just before the window lapsed would be delivered into a chat that has
-			// been told the thread is no longer being read.
-			session.pending = undefined;
+		const sessions = await this.read();
+		const owed = sessions.filter(
+			(session) => session.expiredAt !== undefined && !session.expiryNoticeAt && !session.closed
+		);
+		if (owed.length === 0) {
+			return;
 		}
-		await this.write(sessions);
 
-		for (const session of expiring) {
-			// Fires once per session per process, even if the store is later rewritten
-			// without expiredAt: without this a concurrent writer could re-arm the notice.
-			if (this.notified.has(session.id)) {
-				continue;
-			}
-			this.notified.add(session.id);
-			this.deps.log.info(`Agent session "${session.title}" expired after going quiet`);
-			if (this.deps.onExpired) {
-				try {
-					await this.deps.onExpired({ ...session });
-				} catch (error) {
-					this.deps.log.warn(`Could not post the expiry notice: ${String(error)}`);
+		const delivered: string[] = [];
+		for (const session of owed) {
+			try {
+				await this.deps.onExpired({ ...session });
+				delivered.push(session.id);
+			} catch (error) {
+				// Deliberately not marked: the next pass tries again. Logged once per
+				// session per process so a persistently unreachable thread cannot bury
+				// everything else in the log.
+				if (!this.notified.has(session.id)) {
+					this.notified.add(session.id);
+					this.deps.log.warn(
+						`Could not post the expiry notice for "${session.title}" yet; will retry: ${String(error)}`
+					);
 				}
 			}
+		}
+		if (delivered.length === 0) {
+			return;
+		}
+
+		// Re-read rather than reusing the list above: posting is slow, and another process
+		// may have revived a session in the meantime. Reviving clears expiredAt, and
+		// stamping a notice onto a session that is listening again would suppress the
+		// notice it is owed the *next* time it goes quiet.
+		const latest = await this.read();
+		const timestamp = new Date().toISOString();
+		let changed = false;
+		for (const session of latest) {
+			if (delivered.includes(session.id) && session.expiredAt && !session.expiryNoticeAt) {
+				session.expiryNoticeAt = timestamp;
+				this.notified.delete(session.id);
+				changed = true;
+			}
+		}
+		if (changed) {
+			await this.write(latest);
 		}
 	}
 
@@ -354,6 +408,10 @@ export class AgentReplyRelay {
 			const timestamp = new Date().toISOString();
 			if (session.expiredAt) {
 				session.expiredAt = undefined;
+				// The session is listening again, so the notice it was owed is spent.
+				// Clearing it means the *next* time it goes quiet it is announced afresh
+				// rather than being treated as already told.
+				session.expiryNoticeAt = undefined;
 				// The user was told replies posted while paused are ignored, so advance the
 				// watermark to now: any reply older than that is permanently skipped.
 				session.lastReplyAt = timestamp;

@@ -1,7 +1,12 @@
 # Delivering Teams replies to `copilot` CLI sessions
 
-**Status:** design only — nothing implemented. No behaviour has changed on this branch.
+**Status:** implemented on this branch. Steps A, B, C and D are built, tested and packaged.
 **Branch:** `feature/cli-session-reply-delivery`
+
+> **Shipped behaviour:** `copilotTeamsBridge.resumeCliSessions` defaults to **off**. With it
+> off, CLI sessions behave exactly as they did in 1.0.0 — this is asserted across the whole
+> input space in `test/cliResumeAdditive.test.ts`. The durable pause notice (step D) is a
+> defect fix and is always on.
 
 ---
 
@@ -204,3 +209,50 @@ Live testing has repeatedly caught what unit tests missed, so:
 - End-to-end, on real hardware: start a CLI session, let its turn end, reply in Teams,
   confirm a new turn appears in `session-store.db` for that id and the response is posted
   back to the thread.
+
+---
+
+## What was built, and how the additive claim is enforced
+
+The design above proposed adding `cli-runtime` to `DELIVERABLE_HARNESSES`. **That was wrong
+and was not done.** That set is read by `replyReachability`, which decides the footer on
+*every* message, so widening it would have promised a route for every CLI session --
+including ones with no recorded id, and including users who never opted in. It is the same
+shape as the agent-MCP regression: deliverable by policy, unroutable in practice.
+
+Reachability for the CLI is a property of the individual session, so it is asked of the
+session instead, through an optional argument whose default reproduces the old answer:
+
+```ts
+canResumeCliSession(identity, options)   // false unless opted in AND an id is recorded
+replyReachability(identity, options?)    // options omitted => exactly the previous behaviour
+```
+
+`test/cliResumeAdditive.test.ts` asserts this across every harness x confidence x
+id-present combination, and pins that `deliverableHarnesses` still contains exactly the two
+chat-backed harnesses.
+
+| Piece | Where | On by default |
+|---|---|---|
+| Record `COPILOT_AGENT_SESSION_ID` | `harnessEnv.ts`, `stdio.ts`, `server.ts` | yes -- inert on its own |
+| Capability-aware reachability | `application/services/harness.ts` | yes -- answers unchanged while off |
+| `CliRuntimeAdapter` + spawn wrapper | `hosts/vscode/adapters/` | **no** (`resumeCliSessions`) |
+| Durable pause notice | `agentReplyRelay.ts` | yes -- defect fix |
+| One shared delivery marker | `domain/messageFormat.ts` | yes -- pure refactor |
+
+### Verified
+
+- **454 unit tests**, green on two consecutive runs; lint and layer rules clean.
+- **Real-editor host checks** pass, and the CLI MCP config was byte-identical afterwards.
+- **The two durable-notice guards were run against pre-fix code and fail there**, so they
+  test the fix rather than merely agreeing with it. The other three pass on both, which is
+  what pins the behaviour that must not change.
+- **End to end on real hardware:** the shipped spawn wrapper resumed a live CLI session and
+  the marked instruction landed as turn 2 of that same session (`session rows: 1`), with the
+  agent's answer captured from stdout for posting back.
+
+### Still to prove with the user
+
+Only the full round trip through Teams: reply in a thread for a CLI session with the
+setting on, and confirm the answer comes back to that thread. Every component either side of
+that has been exercised.

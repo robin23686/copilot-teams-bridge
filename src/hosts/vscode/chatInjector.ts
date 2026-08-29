@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { RoutedReply } from '../../application/bridge';
 import { chatSessionIdFrom } from '../../domain/chatSessionLink';
+import { deliveryMarker as sharedDeliveryMarker } from '../../domain/messageFormat';
 import { beginTrace, note, writeTrace, type DeliveryTrace } from './diagnostics';
 
 export interface ChatInjectorOptions {
@@ -400,7 +401,7 @@ export class ChatInjector {
  * a given chat's transcript is what confirms the request reached *that* chat.
  */
 function deliveryMarker(routed: RoutedReply): string {
-	return `[Teams reply \u00b7 session "${routed.session.title}" \u00b7 from ${routed.reply.from}]`;
+	return sharedDeliveryMarker(routed.session.title, routed.reply.from);
 }
 
 /**
