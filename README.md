@@ -98,7 +98,7 @@ Two different waits, and they are easy to confuse:
 |---|---|---|
 | What Copilot is doing | Paused mid-turn, waiting on you | Nothing; the turn ended |
 | How long | `waitForReplyTimeoutSeconds` — **2 h** default and hard maximum in VS Code; the MCP server waits in **150 s** windows and chains them, because MCP hosts abandon longer calls | `sessionIdleMinutes` — **2 h** default in VS Code, **4 h** on the MCP server, **no maximum** |
-| Your reply | Resumes the **same turn**, keeping full context | VS Code: opens a **new** chat request. MCP: held until the agent next checks |
+| Your reply | Resumes the **same turn**, keeping full context | Arrives as a **new turn in the same chat**, keeping its history. CLI and external MCP clients instead hold it until the agent next checks |
 | Needs VS Code open | Yes | Yes |
 
 The 2-hour cap on `waitForReply` exists because a blocked turn holds a Copilot request

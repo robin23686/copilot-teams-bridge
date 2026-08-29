@@ -158,8 +158,9 @@ reaches the agent, so you are not left wondering whether it arrived.
 - **Copilot is waiting for you** — it arrives within about 10 seconds and work continues.
 - **Copilot is mid-task** — it is delivered the next time it checks. Nothing is lost, but
   it will not interrupt work already in flight.
-- **The turn has finished** — in the sidebar it opens a new chat request automatically. In
-  an agent session it is held until the agent next checks.
+- **The turn has finished** — the reply arrives as a new turn in the same chat, in the
+  sidebar and in a VS Code agent session alike. Only the `copilot` CLI and external MCP
+  clients hold it until the agent next checks.
 
 Full detail: [how-waiting-works.md](how-waiting-works.md).
 

@@ -30,7 +30,7 @@ for B — so a thread created on one path is not visible to the other.
 | Thread poll interval | **10 s** (`pollIntervalSeconds`, 3–300) | **10 s** (`COPILOT_TEAMS_BRIDGE_POLL_SECONDS`) |
 | Backoff when reads fail | doubles to a **5 min** ceiling, resets on success or a new wait | same |
 | Session idle expiry | **2 h** (`sessionIdleMinutes`) | **4 h** (not configurable) |
-| Reply when nothing is blocking | injected as a **new chat request** within ~10 s | **held**, returned on the next `teams_check_replies` |
+| Reply when nothing is blocking | a **new turn in the same chat** within ~10 s | the **extension** reads it and delivers it the same way; only CLI and external clients hold it for the next `teams_check_replies` |
 | Reply if the caller disappears | handed back, re-dispatched to chat | handed back to the queue |
 
 The 150 s window is not a limitation of the bridge — it is chosen to sit comfortably
@@ -103,16 +103,25 @@ the thread for every window.
 ```
 agent ── teams_notify ──► Teams thread ── turn ends
                               │
-       your reply ──► polled, then HELD in the queue
+       your reply ──► polled by the EXTENSION (not the server)
                               │
                               ▼
-              returned by the next teams_check_replies
+        delivered as a new turn in the originating chat, ~10 s
 ```
 
-**This is the one real asymmetry.** Path A can start a new chat request; nothing in the
-MCP protocol lets a server interrupt an agent that is not calling it. So on Path B a reply
-sent after the turn ended waits until the agent next checks — which may be your next
-session. It is held, not lost.
+**The asymmetry is smaller than it looks.** Nothing in the MCP protocol lets a server
+interrupt an agent that is not calling it, and that is still true. But the MCP server is
+spawned per tool call and exits with the turn, so leaving it to poll its own threads meant
+a reply could sit unread indefinitely. Instead the **extension** reads those threads on the
+server's behalf — it is alive whenever VS Code is — and delivers the reply into the chat
+that raised it, exactly as Path A does. This is `relayAgentReplies`, on by default.
+
+So for a **VS Code agent session** a reply does *not* wait for the agent to check. It waits
+only for the turn to end.
+
+For the **`copilot` CLI and external MCP clients** the original behaviour still applies:
+there is no chat for the extension to write into, so the reply is held in the queue and
+returned by the next `teams_check_replies`. It is held, not lost.
 
 ## Failure modes that are handled
 
@@ -132,5 +141,6 @@ session. It is held, not lost.
   you next open VS Code, provided the session has not expired.
 - **The model must choose to call the tool.** The instructions file steers it; nothing
   enforces it.
-- On Path B, a reply that arrives after a turn ends needs the agent to check before it is
-  seen.
+- On Path B, a reply that arrives after a turn ends is delivered into the originating chat
+  by the extension — but for the `copilot` CLI and external MCP clients there is no chat to
+  write into, so it still needs the agent to check before it is seen.
