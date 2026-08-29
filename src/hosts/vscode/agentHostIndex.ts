@@ -169,30 +169,40 @@ export interface ConfirmAgentHostOptions {
 	writtenAt: number;
 	/** Upper bound before the confirmation gives up. */
 	ceilingMs: number;
+	/**
+	 * The label of the tab currently in front, if any.
+	 *
+	 * The primary evidence for this surface -- see {@link confirmAgentHostTurn}.
+	 */
+	activeTabLabel?(): string | undefined;
 	pollMs?: number;
 	now?(): number;
 	sleep?(ms: number): Promise<void>;
 }
 
 /**
- * Confirms a request reached a Copilot-mode chat by watching that session start a turn.
+ * Confirms a request reached a Copilot-mode chat.
  *
  * A Copilot-mode chat writes no transcript, so the marker-in-the-file proof used everywhere
- * else is simply unavailable here. What VS Code does record is `timing.lastRequestStarted`
- * for each session, and that advances only when *that* session begins a request. Seeing it
- * move past the instant of the write is therefore evidence about the intended conversation
- * specifically, not about the editor in general -- which is the distinction that matters,
- * because "a chat is in front" has already proved worthless as a delivery proof.
+ * else is simply unavailable here, and two weaker signals have to stand in for it.
  *
- * Weaker than the transcript check in one respect, and worth being explicit about it: it
- * shows a turn started, not that the turn carries our text. A user typing into the same
- * chat at the same moment would also satisfy it. That is accepted because the alternative
- * is no confirmation at all for this surface, and because the write is already targeted at
- * a resolved resource rather than at whatever is focused.
+ * The **primary** one is the title of the tab in front. Delivery reveals the target chat,
+ * focuses that editor group, and writes into the focused chat; so if the tab in front is
+ * the one whose title this session carries, the write went there. This is deliberately not
+ * the discredited "a chat is in front" check -- that answered a different question, because
+ * `TabInputChat` carries no session id. Comparing the *title* to the specific session we
+ * resolved is a statement about which conversation, which is the question that matters.
  *
- * Polls at a second rather than the transcript's 250 ms: each read opens the state database,
- * which is far more expensive than reading one file, and a turn beginning is not a
- * sub-second event.
+ * The **secondary** one is `timing.lastRequestStarted` advancing past the write. It is only
+ * a fallback because VS Code rewrites that index lazily and wholesale: a live test showed a
+ * write at 12:07:23 still unconfirmed at 12:07:54, and the session later absent from the
+ * index entirely. Waiting on it alone reported a delivery that had in fact landed as
+ * unroutable.
+ *
+ * Neither proves the turn carries *our* text -- a user typing in the same chat at that
+ * moment would satisfy both. That is accepted because the alternative is no confirmation at
+ * all for this surface, and because the write is aimed at a resolved resource rather than
+ * at whatever happens to be focused.
  */
 export async function confirmAgentHostTurn(options: ConfirmAgentHostOptions): Promise<boolean> {
 	const now = options.now ?? ((): number => Date.now());
@@ -200,7 +210,14 @@ export async function confirmAgentHostTurn(options: ConfirmAgentHostOptions): Pr
 	const pollMs = options.pollMs ?? 1_000;
 	const deadline = now() + options.ceilingMs;
 
+	// Resolved once: the label is what the session was announced under and does not change
+	// mid-delivery, and re-reading the index for it on every pass would be wasteful.
+	const expected = options.sessions().find((entry) => entry.resource === options.resource)?.label;
+
 	for (;;) {
+		if (expected && options.activeTabLabel?.() === expected) {
+			return true;
+		}
 		const session = options.sessions().find((entry) => entry.resource === options.resource);
 		const started = session?.lastRequestStarted;
 		if (started !== undefined && started >= options.writtenAt) {

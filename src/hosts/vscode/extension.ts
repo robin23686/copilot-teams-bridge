@@ -26,6 +26,7 @@ import { BridgeMcpProvider, MCP_PROVIDER_ID } from './mcpProvider';
 import { ChatSessionWatcher } from './chatSessionWatcher';
 import { ChatSessionResolver } from './chatSessionResolver';
 import { confirmAgentHostTurn, listAgentHostSessions, workspaceStateDbPath } from './agentHostIndex';
+import { AgentHostWatcher } from './agentHostWatcher';
 import { isAgentHostResource, type AgentHostSession } from './agentHostSessions';
 import { AgentReplyRelay } from './agentReplyRelay';
 import { findBridgeServerNames } from './legacyMcpEntry';
@@ -56,6 +57,7 @@ let extensionContext: vscode.ExtensionContext;
 let mcpProvider: BridgeMcpProvider | undefined;
 let sessionWatcher: ChatSessionWatcher | undefined;
 let agentRelay: AgentReplyRelay | undefined;
+let agentHostWatcher: AgentHostWatcher | undefined;
 let harnesses: HarnessRegistry;
 /**
  * The one on-disk record of reply ids already handed to a chat.
@@ -84,13 +86,14 @@ export function activate(context: vscode.ExtensionContext): void {
 		confirmLanded: (resource, marker) =>
 			isAgentHostResource(resource)
 				? // A Copilot-mode chat writes no transcript, so the usual marker search would
-					// find nothing and report a false failure for every delivery. Its own request
-					// timing is the evidence available for that surface.
+					// find nothing and report a false failure for every delivery. Its own tab
+					// title and request timing are the evidence available for that surface.
 					confirmAgentHostTurn({
 						sessions: () => agentHostSessions(context),
 						resource,
 						writtenAt: Date.now(),
-						ceilingMs: config.deliveryConfirmMs
+						ceilingMs: config.deliveryConfirmMs,
+						activeTabLabel: () => vscode.window.tabGroups?.activeTabGroup?.activeTab?.label
 					})
 				: confirmLandedIn(chatSessionsUri(context), resource, marker, config.deliveryConfirmMs)
 	});
@@ -279,6 +282,26 @@ function startWatchers(context: vscode.ExtensionContext): void {
 	});
 	context.subscriptions.push(sessionWatcher);
 	void sessionWatcher.start();
+
+	// Copilot-mode chats write no transcript, so the watcher above is structurally blind to
+	// them: they reached Teams only when the agent inside chose to call the notify tool.
+	// VS Code's own session index is the signal that closes that gap.
+	agentHostWatcher?.dispose();
+	agentHostWatcher = new AgentHostWatcher({
+		sessions: () => agentHostSessions(context),
+		announce: (request) => announceSession({ bridge: () => ensureBridge(context), log }, request),
+		touch: (sessionKey) => {
+			const activity = ensureBridge(context).recordActivity(sessionKey, 'chat-turn');
+			if (activity?.revived) {
+				void ensureBridge(context).postResumedNotice(activity.session);
+			}
+		},
+		enabled: () => config.announceSessions,
+		intervalMs: () => config.pollIntervalMs,
+		log
+	});
+	context.subscriptions.push(agentHostWatcher);
+	agentHostWatcher.start();
 
 	// An MCP server cannot wake an agent whose turn has ended, so a reply sat in its queue
 	// until the user came back and typed something — which defeats replying from a phone.
