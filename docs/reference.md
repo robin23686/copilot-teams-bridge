@@ -44,12 +44,14 @@ typing into was started**, which decides which implementation answers.
 | What you are using | Path | Why |
 |---|---|---|
 | The **Copilot Chat sidebar** in VS Code | **A** | The tool runs inside the extension itself |
+| A **Copilot-mode** chat in VS Code | **A** | A chat tab, delivered into the same way; announced from VS Code's session index rather than a tool call |
 | An **agent session** — a Copilot session driving tools and shell commands for you, including one running inside VS Code | **B** | It reaches the bridge through MCP, in a separate process |
 | **Copilot CLI** in a terminal, Claude Desktop, Cursor | **B** | Same MCP route, different client |
 | Tests and `demo.js` | **C** | No Teams at all, files on disk |
 
 **How to tell which one you are on:** look at the tool name. Path A calls
-`copilotTeamsBridge_notify`. Path B calls `teams_notify`.
+`copilotTeamsBridge_notify`. Path B calls `teams_notify`. A Copilot-mode chat needs neither
+— it is announced automatically.
 
 The distinction matters for one reason: **on Path B nothing can interrupt an agent that is
 busy.**
@@ -553,11 +555,14 @@ node out/src/cli/demo.js sessions
 - **A sidebar reply can still land in the wrong chat when the host does not identify the
   calling chat.** The identity is read from an undocumented field, so a future VS Code could
   stop providing it; the reply is then held rather than delivered, as below.
-- **A reply for a CLI-runtime session cannot be routed at all.** Chats served by the Copilot
-  CLI runtime write no transcript under `chatSessions/`, so there is nothing to match a
-  session key against. Such a reply is **not delivered**: it stays in the Teams thread and
-  the bridge says so there, because the alternative is worse — see below. Sidebar and agent
-  chats do write transcripts and are routed correctly. Observed 2026-08-27.
+- **A reply for a `copilot` CLI session cannot be routed into a chat.** A terminal CLI
+  session has no VS Code chat, and resuming it is withheld — see
+  [known-issues.md](known-issues.md) issue 5. Such a reply is queued for the agent and
+  collected by `teams_check_replies`; if the agent has already exited it is not delivered,
+  and the thread says so. **A Copilot-mode chat is different** and *is* routed correctly
+  since 1.1.0: it is a chat tab, so the reply is revealed and submitted into it like any
+  other. Sidebar and agent chats have always been routed correctly. Observed 2026-08-27,
+  updated 2026-08-29.
 - **Only Windows has been run.** Nothing in the extension is Windows-specific — paths come
   from `os.homedir()` and the VS Code storage API, and the process spawn already branches
   on `process.platform` for the `.cmd` shim — but no part of it has been executed on

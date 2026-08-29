@@ -78,6 +78,11 @@ To add it to a single repo instead, copy
 Prefer to drive it yourself? Run **`Teams Bridge: Start a Session`**, or reference the tool
 in chat with `#teams`.
 
+**Copilot-mode chats need none of this.** A chat backed by the Copilot CLI agent host is
+announced automatically from VS Code's own session index, so it posts its own thread whether
+or not the model calls the tool, and replies are delivered back into that tab. Added in
+1.1.0.
+
 ## How it behaves
 
 | Event | In Teams |

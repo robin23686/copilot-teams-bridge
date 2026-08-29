@@ -10,12 +10,19 @@ reading the numbers for the path you were not on.
 | You are using | Path | Tool the model calls |
 |---|---|---|
 | Copilot Chat in the VS Code sidebar | **A — extension** | `copilotTeamsBridge_notify` |
+| A **Copilot-mode** chat in VS Code | **A — extension** | none needed; announced automatically |
 | An agent session, or `copilot` CLI | **B — MCP server** | `teams_notify` |
 | Claude Desktop, Cursor, any MCP client | **B — MCP server** | `teams_notify` |
 
 Path A runs **inside the VS Code extension host**. Path B runs in a **separate Node
 process** (`out/src/mcp/stdio.js`) that VS Code launches from the extension's own installed
 folder, using the editor's Node runtime.
+
+A **Copilot-mode** chat (`agent-host-copilotcli:`) is a special case of Path A. It is a chat
+tab like any other, so replies are delivered into it the same way — but it writes no
+transcript, so the bridge reads VS Code's own session index instead. That is what announces
+it without the agent having to call any tool, and what confirms a reply landed. Added in
+1.1.0.
 
 They keep separate session stores — `globalState` for A, `~/.copilot-teams-bridge/sessions.json`
 for B — so a thread created on one path is not visible to the other.
