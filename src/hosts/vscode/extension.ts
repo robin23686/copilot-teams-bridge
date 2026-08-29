@@ -15,8 +15,6 @@ import { summariseTurn } from '../../domain/chatTurns';
 import { confirmLandedIn, revealChatSessionInEditor } from './chatReveal';
 import { HoldAdapter } from './adapters/holdAdapter';
 import { SidebarAdapter } from './adapters/sidebarAdapter';
-import { CliRuntimeAdapter } from './adapters/cliRuntimeAdapter';
-import { runCopilotCli } from './adapters/copilotCliRunner';
 import { ChatInjector } from './chatInjector';
 import { describeRouting, probeHarness } from './harnessProbe';
 import type { InjectionOutcome } from './chatInjector';
@@ -107,25 +105,13 @@ export function activate(context: vscode.ExtensionContext): void {
 					? injector.inject(deliverable, mayAutoSubmit())
 					: undefined
 		})
-	).register(new SidebarAdapter({ injector, mayAutoSubmit, log }))
-		.register(
-			new CliRuntimeAdapter({
-				// Read per call, so switching the setting off takes effect immediately
-				// rather than at the next window reload.
-				enabled: () => config.resumeCliSessions,
-				timeoutMs: () => config.cliResumeTimeoutMs,
-				run: runCopilotCli,
-				report: async (session, text) => {
-					await ensureBridge(context).notify({
-						sessionKey: session.key,
-						title: session.title,
-						summary: text,
-						status: 'progress'
-					});
-				},
-				log
-			})
-		);
+	).register(new SidebarAdapter({ injector, mayAutoSubmit, log }));
+	// CliRuntimeAdapter is deliberately NOT registered. See docs/known-issues.md: resuming
+	// addresses a *finished* session, and a live one shares the same id, so a reply can be
+	// written into a conversation another process is still holding. Detecting liveness
+	// could not be verified against a running session, and an unverified safety gate is
+	// worse than withholding the feature. The adapter and its tests stay so the fix has a
+	// starting point.
 
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'copilotTeamsBridge.showSessions';

@@ -1,12 +1,18 @@
 # Delivering Teams replies to `copilot` CLI sessions
 
-**Status:** implemented on this branch. Steps A, B, C and D are built, tested and packaged.
+**Status:** partly shipped in 1.1.0. Steps A and D shipped; **B and C are withheld.**
 **Branch:** `feature/cli-session-reply-delivery`
 
-> **Shipped behaviour:** `copilotTeamsBridge.resumeCliSessions` defaults to **off**. With it
-> off, CLI sessions behave exactly as they did in 1.0.0 — this is asserted across the whole
-> input space in `test/cliResumeAdditive.test.ts`. The durable pause notice (step D) is a
-> defect fix and is always on.
+> **What shipped:** the CLI session id is captured, and the pause notice is durable.
+>
+> **What did not:** resuming a CLI session to deliver a reply. Live testing showed
+> `copilot --session-id` addresses a *finished* session while a live one shares the same id
+> — see issue #5 in [known-issues.md](../known-issues.md). `CliRuntimeAdapter` and its tests
+> remain in the tree but are **not registered**, and the settings that gated it have been
+> removed so nothing can switch on an unfinished path.
+>
+> Superseded in practice by **Copilot-mode support**, which delivers into the chat tab the
+> user is actually looking at rather than a headless process they cannot see.
 
 ---
 
