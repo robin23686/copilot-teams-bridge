@@ -25,6 +25,9 @@ thread *is* the addressing, so two tasks running at once can never be confused.
 > **Full functionality reference:** [docs/reference.md](docs/reference.md) — every host,
 > every timing, what a reply may contain, and the known gaps.
 >
+> **Something not working?** [docs/diagnosing-a-problem.md](docs/diagnosing-a-problem.md) —
+> where the logs are, how to read them, and what to send.
+>
 > **Open defects:** [docs/known-issues.md](docs/known-issues.md) — found by live testing,
 > with the evidence, not yet fixed.
 >
@@ -199,6 +202,9 @@ API to inject a turn into an existing session.
 | No thread appears | Check your instructions tell the model to call the tool at start, or run **Start a Session** |
 | Replies do not arrive | **Check Teams for Replies Now**, then read the *Copilot Teams Bridge* output channel |
 | Wrong channel | Re-run **Teams Bridge: Set Up** |
+
+**Anything else:** [docs/diagnosing-a-problem.md](docs/diagnosing-a-problem.md) walks through
+reading the log, decoding the one-line delivery trace, and what to include in a report.
 
 For a command-line check of the whole path:
 
