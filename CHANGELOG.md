@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Custom-agent guidance now allows both bridge host surfaces but requires selecting exactly
+  one notification tool per session. The extension tool is preferred when callable; MCP is
+  the fallback only when it is unavailable. Agents are told not to switch tools mid-session,
+  which could create a second Teams thread.
+
 ## 1.1.0
 
 Adds support for VS Code **Copilot mode** chats, and fixes two defects that could leave a

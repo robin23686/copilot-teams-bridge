@@ -8,8 +8,8 @@ applyTo: '**'
 You have a Teams bridge tool that posts to the user's Microsoft Teams channel. Use it so
 they can follow the work from their phone and reply to steer it.
 
-**The tool has a different name depending on where you are running. Use whichever one is
-in your toolset:**
+**The tool has a different name depending on where you are running. You may see one or
+both names:**
 
 | Host | Tool name |
 |---|---|
@@ -18,13 +18,28 @@ in your toolset:**
 
 Both take the same arguments.
 
+## Select one notification tool per session
+
+Choose the notification path once, before the first update:
+
+1. If `copilotTeamsBridge_notify` is callable, use it.
+2. Otherwise use `teams_notify` (listed as `copilot-teams-bridge-teams_notify`).
+3. After the first successful call, keep using that same tool and its returned `sessionId`
+   for every update in this session.
+
+**Never call both notification tools in one session. Never switch to the other tool as an
+automatic retry.** The extension and MCP tools run in different hosts; switching can create
+a second Teams thread. If the selected tool fails, report that failure in this chat and
+continue without a Teams update unless the user explicitly asks you to retry another path.
+
 **Before the first substantive step:**
 
 1. If the notify tool is already callable, call it directly.
 2. If it appears only in a deferred-tools reminder, call `search_tool` with a query such as
    `post a Teams bridge notification and wait for a reply`, then call the returned tool.
-3. If a custom agent restricts tools, its frontmatter must include
-   `copilot-teams-bridge/*`; otherwise neither direct invocation nor tool search can expose it.
+3. If a custom agent restricts tools, its frontmatter should allow both
+   `copilotTeamsBridge_notify` and `copilot-teams-bridge/*`; the selection rule above still
+   requires the agent to use only one.
 
 Do not start repository, cloud, PR, work-item, or shell work before posting the start update.
 
@@ -63,11 +78,12 @@ said they are stepping away and you need to keep the turn alive for them.
 turn resumes, so read their latest chat message and treat that as the reply instead of
 waiting on Teams again.
 
-**A wait is a window, not a verdict.** When you do block, the tool returns after a couple of
-minutes because the host abandons any tool call that runs much longer. Coming back empty
-means *"nothing yet"*, never *"the user declined to answer"*. To carry on waiting, call
-`teams_check_replies` with `waitSeconds` — do **not** post another notification just to
-re-arm, or the user gets a duplicate message.
+**A wait is a window, not a verdict.** When you do block, the tool may return because the
+host limits long calls. Coming back empty means *"nothing yet"*, never *"the user declined
+to answer"*. If this session selected MCP `teams_notify`, carry on waiting with
+`teams_check_replies` and `waitSeconds` — do **not** post another notification just to
+re-arm. If it selected `copilotTeamsBridge_notify`, do not cross over to the MCP check tool;
+end the turn and let the extension deliver a later reply.
 
 Nothing is lost if you do stop: a reply that arrives later is held and handed to you the
 next time you check.
@@ -94,7 +110,7 @@ you when that happens.
   instruction they just sent — only you acting on something invisible, which looks like the
   reply was ignored. Start the next message with what came back, e.g.
   `> From Teams: "<their words>"`, then act on it.
-- **Scope every `teams_check_replies` to your own session.** Pass the `sessionId` you were
+- **On MCP sessions, scope every `teams_check_replies` to your own session.** Pass the `sessionId` you were
   given, or your `sessionKey`. The server enforces this: on a shared MCP server, an
   unscoped call is rejected with a JSON-RPC error so another task's reply cannot be
   drained by mistake. `teams_list_sessions` similarly only shows sessions started by your
