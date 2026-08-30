@@ -1,0 +1,64 @@
+name: Triage problem reports
+
+# Runs on every new issue, but only acts on the ones the "Report a Problem" command wrote:
+# the entry point returns recognised=false for anything without the report marker, and this
+# workflow stops there. A hand-written issue is never relabelled by a classifier that has
+# only ever been shown machine-written input.
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Classify the report
+        env:
+          TRIAGE_OUTPUT: triage.json
+        run: node out/src/hosts/actions/triageIssue.js
+
+      - name: Apply the verdict
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          recognised=$(node -p "require('./triage.json').recognised")
+          if [ "$recognised" != "true" ]; then
+            echo "Not an auto-generated report; leaving it alone."
+            exit 0
+          fi
+
+          number=$(node -p "require('./triage.json').number")
+          labels=$(node -p "require('./triage.json').labels.join('\n')")
+
+          # Labels are created on demand so a fresh clone of this repository triages
+          # correctly without anyone remembering to seed the label set by hand.
+          for label in $labels; do
+            gh label create "$label" --repo "$REPO" --force >/dev/null 2>&1 || true
+            gh issue edit "$number" --repo "$REPO" --add-label "$label"
+          done
+
+          node -p "require('./triage.json').comment" > comment.md
+          gh issue comment "$number" --repo "$REPO" --body-file comment.md
+
+      # Handing a triaged report to the Copilot coding agent is the obvious next step and is
+      # deliberately not taken here. The value of this change is that the evidence arrives
+      # complete; letting an agent act on it unsupervised is a separate decision, with its
+      # own review, and would be added as a further job gated on a maintainer label.

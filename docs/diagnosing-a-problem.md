@@ -210,6 +210,13 @@ identity records that make delivery accurate.
 
 ## 7. Reporting a problem
 
+**Command Palette → `Teams Bridge: Report a Problem`.** It asks what happened, collects
+everything below on its own — log tail, routing decision, versions, which notification hosts
+are callable — redacts it, shows it to you, and opens a labelled issue once you agree.
+[What it collects and what it removes](reporting-a-problem.md).
+
+Everything after this point is the manual route, for when the extension will not start.
+
 Open an issue at
 [github.com/robin23686/copilot-teams-bridge/issues](https://github.com/robin23686/copilot-teams-bridge/issues)
 with:

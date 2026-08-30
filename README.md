@@ -28,6 +28,9 @@ thread *is* the addressing, so two tasks running at once can never be confused.
 > **Something not working?** [docs/diagnosing-a-problem.md](docs/diagnosing-a-problem.md) —
 > where the logs are, how to read them, and what to send.
 >
+> **Reporting it:** run **`Teams Bridge: Report a Problem`** — it collects and redacts the
+> evidence for you. [docs/reporting-a-problem.md](docs/reporting-a-problem.md).
+>
 > **Open defects:** [docs/known-issues.md](docs/known-issues.md) — found by live testing,
 > with the evidence, not yet fixed.
 >
@@ -172,6 +175,7 @@ Copilot.
 | **Teams Bridge: Extend a Session** | Revive an expired session so it listens again |
 | **Teams Bridge: Rename a Session** | Rename a session and rewrite its Teams opening message |
 | Teams Bridge: Show Sessions | List active sessions |
+| **Teams Bridge: Report a Problem** | Collect the log, routing and versions, redact them, and file a labelled issue |
 
 ## Settings
 
@@ -211,6 +215,10 @@ API to inject a turn into an existing session.
 
 **Anything else:** [docs/diagnosing-a-problem.md](docs/diagnosing-a-problem.md) walks through
 reading the log, decoding the one-line delivery trace, and what to include in a report.
+
+**Still stuck?** Run **`Teams Bridge: Report a Problem`**. It assembles the whole report —
+log tail, routing decision, versions, which notification hosts are callable — redacts it,
+shows it to you, and files it. See [docs/reporting-a-problem.md](docs/reporting-a-problem.md).
 
 For a command-line check of the whole path:
 

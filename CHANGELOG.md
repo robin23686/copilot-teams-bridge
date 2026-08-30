@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### `Teams Bridge: Report a Problem`
+
+A new command that assembles a support report instead of asking the user to. It interviews
+you for the part only you know — what happened, what you expected, how to reproduce it, and
+which part is at fault — then attaches the part only the extension knows: the extension and
+VS Code versions, the transport, **which notification hosts are actually callable**, how
+live sessions would be routed right now, the tail of this window's log with the `[route]`
+lines preserved, and which state files exist and how big they are.
+
+- **Redacted before it is rendered**, so an unredacted copy never exists. Home paths,
+  usernames, email addresses, Teams channel ids and the configured team/channel go; chat
+  identities and GUIDs are shortened rather than deleted, so two chats in one report stay
+  distinguishable. Session titles are withheld unless you opt in.
+- **Shown to you, then consented to.** The report opens in an editor and a modal asks before
+  anything is published. "Just keep the file" is a supported answer.
+- **Saved first, submitted second** — `<globalStorage>/problem-reports/` — so a failed or
+  cancelled submission never loses what you wrote.
+- **Filed with `gh` when it is available**, which carries the whole body and the labels;
+  otherwise a prefilled browser issue with a trimmed body pointing at the saved copy.
+
+Issues are labelled `auto-report`, `needs-triage` and one `area:*` label. A new workflow
+reads the report back out of the issue body and posts a first-pass triage comment, adding
+`needs-info` when the evidence needed to answer it is missing. It ignores any issue without
+the machine-written marker, and it never changes code or closes anything. The classification
+rules live in `src/domain/problemReport.ts` and are unit-tested, rather than in the workflow
+where they could only be exercised by filing a real issue.
+
+See [docs/reporting-a-problem.md](docs/reporting-a-problem.md).
+
+### Other
+
 - Custom-agent guidance now allows both bridge host surfaces but requires selecting exactly
   one notification tool per session. The extension tool is preferred when callable; MCP is
   the fallback only when it is unavailable. Agents are told not to switch tools mid-session,

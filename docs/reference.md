@@ -525,6 +525,9 @@ from your settings; changing them restarts the server.
 | **Check Teams for Replies Now** | Poll immediately |
 | **Extend a Session** / **Rename a Session** | Postpone expiry; retitle a thread |
 | **Start / Stop Listening for Replies** | Control polling |
+| **Report a Problem** | Interview, collect and redact the diagnostics, and file a labelled GitHub issue — see [reporting-a-problem.md](reporting-a-problem.md) |
+| **Show How Replies Will Be Routed** | Where a reply would go, before one arrives |
+| **Reset All Local State** | Forget every session and thread claim |
 
 Local harness, no Teams required:
 
