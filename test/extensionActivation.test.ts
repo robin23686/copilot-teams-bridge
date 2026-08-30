@@ -538,6 +538,29 @@ describe('extension activation', () => {
 		assert.strictEqual(registered.errorMessages.length, 0);
 	});
 
+	// The command has to be both registered and declared, or it is invisible in the palette
+	// exactly when someone is trying to report that nothing works.
+	it('offers Report a Problem in the palette', () => {
+		const handler = registered.commands.get('copilotTeamsBridge.reportProblem');
+		assert.ok(handler, 'command must be registered');
+
+		const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8')) as {
+			contributes: { commands: { command: string; title: string }[] };
+		};
+		assert.ok(
+			manifest.contributes.commands.some((entry) => entry.command === 'copilotTeamsBridge.reportProblem'),
+			'command must be declared in package.json'
+		);
+	});
+
+	// Backing out of the interview is the common case, and a wizard that scolds you for
+	// cancelling is one nobody opens twice.
+	it('says nothing when the report interview is cancelled', async () => {
+		const before = registered.errorMessages.length + registered.infoMessages.length;
+		await registered.commands.get('copilotTeamsBridge.reportProblem')?.();
+		assert.strictEqual(registered.errorMessages.length + registered.infoMessages.length, before);
+	});
+
 	it('delivers an incoming reply into Copilot Chat', async () => {
 		const tool = registered.tools.get('copilotTeamsBridge_notify');
 		await tool?.invoke(

@@ -154,6 +154,11 @@
         "category": "Copilot Teams Bridge"
       },
       {
+        "command": "copilotTeamsBridge.reportProblem",
+        "title": "Teams Bridge: Report a Problem",
+        "category": "Copilot Teams Bridge"
+      },
+      {
         "command": "copilotTeamsBridge.resetLocalState",
         "title": "Teams Bridge: Reset All Local State"
       }

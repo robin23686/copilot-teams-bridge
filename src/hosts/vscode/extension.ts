@@ -29,6 +29,7 @@ import { isAgentHostResource, type AgentHostSession } from './agentHostSessions'
 import { AgentReplyRelay } from './agentReplyRelay';
 import { findBridgeServerNames } from './legacyMcpEntry';
 import { announceSession, resetAnnouncements, titleFromPrompt } from './sessionStarter';
+import { reportProblem } from './problemReport';
 import { installInstructions, runSetup } from './setup';
 import { syncCliMcpConfig } from './cliMcpConfig';
 
@@ -378,6 +379,23 @@ function registerCommands(context: vscode.ExtensionContext): void {
 		});
 		await vscode.window.showTextDocument(document, { preview: true });
 	});
+
+	// The diagnostics are only useful if they reach someone who can act on them, and the
+	// manual route asked the user to assemble them by hand from a log folder they first had
+	// to find. This collects the same evidence itself.
+	register('copilotTeamsBridge.reportProblem', () =>
+		reportProblem({
+			context,
+			log,
+			environment: () => ({
+				transport: config.transport,
+				teamsConfigured: Boolean(config.teamId && config.channelId),
+				sessionCount: bridge ? bridge.listSessions().filter((session) => !session.closed).length : 0,
+				listening: bridge?.isListening ?? false
+			}),
+			routing: () => describeRouting(probeDeps),
+			bridgeHome: bridgeHomePath()
+		}));
 
 	register('copilotTeamsBridge.startSession', async () => {
 		const prompt = await vscode.window.showInputBox({

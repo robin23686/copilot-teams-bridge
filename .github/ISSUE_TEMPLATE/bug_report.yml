@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in the Teams bridge does not work as expected
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **There is a faster way to do this.** Run **`Teams Bridge: Report a Problem`** from
+        the Command Palette in VS Code. It asks the same questions and attaches the log,
+        the routing decision and the environment for you — all redacted first — which is
+        the part that usually makes a report answerable.
+
+        Fill this in by hand only if the extension will not start at all.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part is at fault?
+      options:
+        - Messages to Teams
+        - Replies back into Copilot
+        - Sessions and threads
+        - Setup and configuration
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Extension and VS Code versions
+      placeholder: "1.1.0 / 1.106.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: >
+        The `[route]` line is usually enough on its own. View → Output → Copilot Teams
+        Bridge. Please check it for anything you would rather not publish.
+      render: log

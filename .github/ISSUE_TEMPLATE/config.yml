@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Diagnose it first
+    url: https://github.com/robin23686/copilot-teams-bridge/blob/main/docs/diagnosing-a-problem.md
+    about: The log answers most questions, and the `[route]` line answers most of the rest.
+  - name: Known issues
+    url: https://github.com/robin23686/copilot-teams-bridge/blob/main/docs/known-issues.md
+    about: Several observed behaviours are already recorded here with their evidence.
