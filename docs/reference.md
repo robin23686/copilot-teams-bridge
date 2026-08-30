@@ -53,6 +53,19 @@ typing into was started**, which decides which implementation answers.
 `copilotTeamsBridge_notify`. Path B calls `teams_notify`. A Copilot-mode chat needs neither
 — it is announced automatically.
 
+### If both tools are available
+
+Allow both in a restrictive custom agent so it remains compatible with either host, but
+select only one notification tool for a session:
+
+1. Prefer `copilotTeamsBridge_notify` when it is callable.
+2. Otherwise use MCP `teams_notify`.
+3. Keep using the selected tool and returned `sessionId` for every later update.
+
+Do not call both and do not switch tools as an automatic retry. The extension and MCP paths
+have different host identities, so changing paths can open a second Teams thread. A failure
+on the selected path should be surfaced in chat rather than hidden behind a fallback.
+
 The distinction matters for one reason: **on Path B nothing can interrupt an agent that is
 busy.**
 

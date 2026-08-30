@@ -181,16 +181,21 @@ gets the behaviour, while their own `teamId`/`channelId` stay personal.
 ### For a custom agent
 
 If you use an agent definition (`.github/agents/*.agent.md` or an Agency agent) with a
-`tools:` allowlist, explicitly allow the bridge MCP server:
+`tools:` allowlist, explicitly allow both bridge surfaces:
 
 ```yaml
-tools: [read, search, execute, copilot-teams-bridge/*]
+tools: [read, search, execute, copilotTeamsBridge_notify, copilot-teams-bridge/*]
 ```
 
 This is required even when the user-level instructions are loaded. A restrictive custom
 agent can see the deferred MCP server reminder while having neither the notify tool nor
-`search_tool` available, making the instruction impossible to follow. Also add or retain
-the Teams guidance in the agent body if it overrides user-level instructions.
+`search_tool` available, making the instruction impossible to follow.
+
+The allowlist grants compatibility; it does not authorize duplicate notifications. The
+agent must select exactly one path: prefer `copilotTeamsBridge_notify` when callable,
+otherwise use MCP `teams_notify`. It must keep that selection and returned `sessionId` for
+the whole session, and must not switch tools as an automatic retry. Also add or retain the
+Teams guidance in the agent body if it overrides user-level instructions.
 
 ### Verifying the model picked it up
 

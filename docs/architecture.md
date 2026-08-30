@@ -364,8 +364,10 @@ To read what Copilot is being told, open either installed copy.
 Two cases still need you:
 
 - **A reload** for a newly written file to take effect.
-- **A custom agent with a `tools:` allowlist** must include `copilot-teams-bridge/*`, or the
-  agent cannot call the tool no matter what the instructions say.
+- **A custom agent with a `tools:` allowlist** should include both
+  `copilotTeamsBridge_notify` and `copilot-teams-bridge/*`, because different hosts expose
+  different surfaces. The installed instruction still requires exactly one path per
+  session: prefer the extension tool, otherwise use MCP, and never switch automatically.
 
 ### All settings
 

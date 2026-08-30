@@ -77,11 +77,16 @@ code "$env:APPDATA\Code\User\prompts\teams-bridge.instructions.md"
 ```
 
 **The one case that still needs you:** a custom agent with a `tools:` allowlist must include
-the bridge, or it cannot call the tool whatever the instructions say:
+both bridge surfaces, because the available surface depends on how that session is hosted:
 
 ```yaml
-tools: [read, search, execute, copilot-teams-bridge/*]
+tools: [read, search, execute, copilotTeamsBridge_notify, copilot-teams-bridge/*]
 ```
+
+Allowing both does not mean calling both. The installed instructions tell the agent to
+prefer `copilotTeamsBridge_notify` when it is callable, otherwise use MCP `teams_notify`,
+and then stay on that selected tool for the whole session. Switching tools can create a
+second Teams thread.
 
 ---
 

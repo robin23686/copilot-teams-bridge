@@ -83,6 +83,12 @@ announced automatically from VS Code's own session index, so it posts its own th
 or not the model calls the tool, and replies are delivered back into that tab. Added in
 1.1.0.
 
+For a restrictive custom agent, allow both `copilotTeamsBridge_notify` and
+`copilot-teams-bridge/*` so either host can expose its bridge surface. The installed
+instructions select exactly one for each session: prefer the extension tool when callable,
+otherwise use MCP `teams_notify`, and never switch tools automatically after the first
+successful update.
+
 ## How it behaves
 
 | Event | In Teams |
@@ -264,7 +270,6 @@ npm test
 ## License
 
 MIT
-
 
 
 

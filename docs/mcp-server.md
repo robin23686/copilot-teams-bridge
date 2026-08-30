@@ -118,9 +118,16 @@ tools/call  -> posted to the Teams channel
 
 ## Prompting the agent
 
+Use MCP `teams_notify` only when the VS Code extension tool
+`copilotTeamsBridge_notify` is not callable. If both are available, prefer the extension
+tool. Once a session has posted its first update, keep using the same notification tool and
+returned `sessionId`; do not switch paths as a retry, because the other host can create a
+second Teams thread.
+
 ```markdown
 When you start a task, call `teams_notify` with status "progress" to open a Teams thread.
 Call it again with "completed" and a summary when you finish, or "needs-input" with
-waitForReply true when you are blocked — the reply returns as the tool result and is your
-next instruction. Use one stable sessionKey per task.
+the question when you are blocked. Leave waitForReply unset and end the turn normally so
+the user can answer in either Teams or the current chat. Set it only when the user says they
+are stepping away and asks you to keep waiting. Use one stable sessionKey per task.
 ```
