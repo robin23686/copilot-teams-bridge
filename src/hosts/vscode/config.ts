@@ -54,6 +54,10 @@ export interface BridgeConfig {
 	cliResumeTimeoutMs: number;
 	/** When to @mention the user in Teams. See {@link MentionPolicy}. */
 	mentionPolicy: MentionPolicy;
+	/** Opt-in SDK-owned conversations whose user interface is a Teams thread. */
+	sdkSessionsEnabled?: boolean;
+	/** Copilot CLI runtime the SDK starts over stdio. */
+	sdkRuntimePath?: string;
 }
 
 export const CONFIG_SECTION = 'copilotTeamsBridge';
@@ -88,7 +92,9 @@ export function readConfig(context: vscode.ExtensionContext): BridgeConfig {
 		// user value would suggest it can be switched on.
 		resumeCliSessions: false,
 		cliResumeTimeoutMs: clamp(config.get<number>('cliResumeTimeoutSeconds', 900), 30, 3600) * 1000,
-		mentionPolicy: config.get<MentionPolicy>('mentionOn', 'keyMoments')
+		mentionPolicy: config.get<MentionPolicy>('mentionOn', 'keyMoments'),
+		sdkSessionsEnabled: config.get<boolean>('experimental.sdkSessions.enabled', false),
+		sdkRuntimePath: text(config.get<string>('experimental.sdkSessions.runtimePath', 'copilot')) || 'copilot'
 	};
 }
 
@@ -107,6 +113,3 @@ function clamp(value: number, min: number, max: number): number {
 	}
 	return Math.min(max, Math.max(min, value));
 }
-
-
-

@@ -14,6 +14,10 @@ if (!fs.existsSync(outDir)) {
 	process.exit(0);
 }
 
+// Packaging stages third-party runtime files here. They are not compiler output and a
+// partially pruned package can shadow the complete development dependency above out/.
+fs.rmSync(path.join(outDir, 'node_modules'), { recursive: true, force: true });
+
 const removed = [];
 
 function walk(dir) {

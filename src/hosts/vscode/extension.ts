@@ -31,6 +31,13 @@ import { findBridgeServerNames } from './legacyMcpEntry';
 import { announceSession, resetAnnouncements, titleFromPrompt } from './sessionStarter';
 import { installInstructions, runSetup } from './setup';
 import { syncCliMcpConfig } from './cliMcpConfig';
+import {
+	modelItems,
+	SDK_MANAGED_SESSIONS_KEY,
+	SdkManagedSessions,
+	type SdkAgentMode,
+	type SdkPermissionMode
+} from './sdkManagedSessions';
 
 const SESSIONS_KEY = 'copilotTeamsBridge.sessions';
 
@@ -57,6 +64,7 @@ let sessionWatcher: ChatSessionWatcher | undefined;
 let agentRelay: AgentReplyRelay | undefined;
 let agentHostWatcher: AgentHostWatcher | undefined;
 let harnesses: HarnessRegistry;
+let sdkManagedSessions: SdkManagedSessions | undefined;
 /**
  * The one on-disk record of reply ids already handed to a chat.
  *
@@ -72,6 +80,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(log);
 
 	config = readConfig(context);
+	sdkManagedSessions = createSdkManagedSessions(context);
+	context.subscriptions.push(sdkManagedSessions);
 	injector = new ChatInjector({
 		log,
 		holdUnroutable: () => config.unroutableReplies === 'hold',
@@ -142,7 +152,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			if (!event.affectsConfiguration(CONFIG_SECTION)) {
 				return;
 			}
+			const sdkWasEnabled = config.sdkSessionsEnabled;
 			config = readConfig(context);
+			if (sdkWasEnabled && !config.sdkSessionsEnabled) {
+				void sdkManagedSessions?.disable().catch((error: unknown) => {
+					log.error(`Could not close SDK sessions after disabling the mode: ${describeError(error)}`);
+				});
+			}
 			// Transport settings changed, so rebuild lazily on next use.
 			bridge?.dispose();
 			bridge = undefined;
@@ -209,6 +225,8 @@ export function deactivate(): void {
 	sessionWatcher = undefined;
 	agentRelay?.dispose();
 	agentRelay = undefined;
+	void sdkManagedSessions?.dispose();
+	sdkManagedSessions = undefined;
 }
 
 /**
@@ -385,6 +403,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 			placeHolder: 'e.g. Add a solutionArea filter to the Reserve API',
 			ignoreFocusOut: true
 		});
+
 		if (!prompt) {
 			return;
 		}
@@ -395,6 +414,122 @@ function registerCommands(context: vscode.ExtensionContext): void {
 		);
 		void vscode.window.showInformationMessage(`Teams thread opened for "${title}".`);
 		updateStatusBar();
+	});
+
+	register('copilotTeamsBridge.startSdkSession', async () => {
+		if (!config.sdkSessionsEnabled) {
+			const enable = 'Enable and continue';
+			const choice = await vscode.window.showWarningMessage(
+				'Teams-managed Copilot sessions are experimental. They create a separate SDK-owned '
+					+ 'conversation whose history does not appear in VS Code Copilot Chat. The installed '
+					+ 'Copilot CLI supplies authentication and the runtime.',
+				{ modal: true },
+				enable
+			);
+			if (choice !== enable) {
+				return;
+			}
+			await vscode.workspace
+				.getConfiguration(CONFIG_SECTION)
+				.update('experimental.sdkSessions.enabled', true, vscode.ConfigurationTarget.Global);
+			config = readConfig(context);
+		}
+
+		const prompt = await vscode.window.showInputBox({
+			title: 'Start a Teams-managed Copilot session (1 of 3)',
+			prompt: 'What should Copilot do?',
+			placeHolder: 'e.g. Investigate why the build fails and propose a fix',
+			ignoreFocusOut: true,
+			validateInput: (value) => value.trim().length < 8 ? 'Please describe the task.' : undefined
+		});
+		if (!prompt) {
+			return;
+		}
+
+		const profiles: {
+			label: string;
+			description: string;
+			mode: SdkAgentMode;
+			permissions: SdkPermissionMode;
+		}[] = [
+			{
+				label: 'Interactive, ask before tools (recommended)',
+				description: 'One agent turn; file, shell and network permissions appear in VS Code',
+				mode: 'interactive',
+				permissions: 'ask'
+			},
+			{
+				label: 'Autopilot, ask before tools',
+				description: 'Copilot continues autonomously, but every permission still appears in VS Code',
+				mode: 'autopilot',
+				permissions: 'ask'
+			},
+			{
+				label: 'Plan only, ask before tools',
+				description: 'Explore and produce a plan without implementing it',
+				mode: 'plan',
+				permissions: 'ask'
+			},
+			{
+				label: 'Autopilot with full machine access',
+				description: 'Dangerous: Teams instructions can run commands and modify files without approval',
+				mode: 'autopilot',
+				permissions: 'approve-all'
+			}
+		];
+		const profile = await vscode.window.showQuickPick(profiles, {
+			title: 'Start a Teams-managed Copilot session (2 of 3)',
+			placeHolder: 'How should this session run?',
+			ignoreFocusOut: true
+		});
+		if (!profile) {
+			return;
+		}
+		if (profile.permissions === 'approve-all') {
+			const accept = 'I understand — allow full machine access';
+			const confirmed = await vscode.window.showWarningMessage(
+				'Anyone who can reply in this Teams thread can instruct Copilot to run commands and '
+					+ 'modify files as your Windows account. This is broader than workspace access. '
+					+ 'Organization policy can still deny operations.',
+				{ modal: true },
+				accept
+			);
+			if (confirmed !== accept) {
+				return;
+			}
+		}
+
+		const manager = sdkManagedSessions ?? createSdkManagedSessions(context);
+		sdkManagedSessions = manager;
+		const models = await vscode.window.withProgress(
+			{ location: vscode.ProgressLocation.Notification, title: 'Teams Bridge: loading your Copilot models…' },
+			() => manager.listModels()
+		);
+		const model = await vscode.window.showQuickPick(modelItems(models), {
+			title: 'Start a Teams-managed Copilot session (3 of 3)',
+			placeHolder: 'Which model should this session use?',
+			ignoreFocusOut: true
+		});
+		if (!model) {
+			return;
+		}
+
+		const title = titleFromPrompt(prompt);
+		void vscode.window.showInformationMessage(
+			`Teams Bridge: "${title}" is running in Teams. You can close this notification.`
+		);
+		void manager.start({
+			title,
+			prompt: prompt.trim(),
+			model: model.model,
+			agentMode: profile.mode,
+			permissionMode: profile.permissions
+		}).catch((error: unknown) => {
+			log.error(`Could not start Teams-managed Copilot session: ${describeError(error)}`);
+			void vscode.window.showErrorMessage(
+				`Teams Bridge: could not start the Copilot SDK session — ${describeError(error)}`
+			);
+		});
 	});
 
 	register('copilotTeamsBridge.renameSession', async () => {
@@ -664,6 +799,7 @@ async function resetLocalState(context: vscode.ExtensionContext): Promise<void> 
 
 	await context.globalState.update(SESSIONS_KEY, undefined);
 	await context.globalState.update(DUPLICATE_WARNING_KEY, undefined);
+	await context.globalState.update(SDK_MANAGED_SESSIONS_KEY, undefined);
 	cleared.push('extension sessions');
 
 	const home = bridgeHomePath();
@@ -744,10 +880,15 @@ function ensureBridge(context: vscode.ExtensionContext): Bridge {
 	});
 	bridge.onReply(async (routed) => {
 		log.info(`Teams reply for "${routed.session.title}" from ${routed.reply.from}`);
+		if (await sdkManagedSessions?.handleReply(routed)) {
+			updateStatusBar();
+			return;
+		}
 		if (routed.command && ['stop', 'close', 'done', 'cancel'].includes(routed.command)) {
 			void vscode.window.showInformationMessage(`Teams Bridge: session "${routed.session.title}" closed from Teams.`);
 			return;
 		}
+
 		await handOver(context, routed);
 		updateStatusBar();
 	});
@@ -770,6 +911,16 @@ function ensureBridge(context: vscode.ExtensionContext): Bridge {
 	// instead of opening a second thread for a task already under way.
 	bridge.publishThreads();
 	return bridge;
+}
+
+function createSdkManagedSessions(context: vscode.ExtensionContext): SdkManagedSessions {
+	return new SdkManagedSessions({
+		memento: context.globalState,
+		bridge: () => ensureBridge(context),
+		log,
+		workspacePath: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+		runtimePath: () => config.sdkRuntimePath ?? 'copilot'
+	});
 }
 
 /**
@@ -951,7 +1102,3 @@ function updateStatusBar(): void {
 		: 'Copilot Teams Bridge: not listening';
 	statusBar.show();
 }
-
-
-
-
