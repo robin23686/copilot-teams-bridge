@@ -200,3 +200,20 @@ needs its own fix — a notice that cannot be delivered must not be silently dro
 Issue #4 is independent of the suspend, and is the one that leaves a thread permanently
 unusable. #3 and #4 together are the worst combination the bridge can produce: a thread
 that still invites replies, ignores them, and cannot be revived.
+
+---
+
+## Experimental SDK mode limitations
+
+The opt-in Teams-managed Copilot SDK mode is intentionally not a replacement for VS Code
+Copilot Chat:
+
+- The SDK has no supported API for adopting an existing VS Code chat, so its history is
+  separate and is not rendered in the Chat sidebar.
+- VS Code must remain open for the bridge to poll Teams and submit replies.
+- Interactive SDK permission requests appear in VS Code, not Teams.
+- The mode depends on a compatible, signed-in Copilot CLI executable on the local machine.
+- Only the final assistant response is posted. Detailed streaming output and tool progress
+  remain in the SDK runtime.
+- A Teams message is truncated for display when it exceeds the channel-friendly summary
+  limit; the durable SDK history retains the complete conversation.

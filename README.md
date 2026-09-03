@@ -44,6 +44,8 @@ thread *is* the addressing, so two tasks running at once can never be confused.
 - **Windows** — the only platform it has been run on. There is no Windows-specific code and
   no `os` restriction in the manifest, so macOS and Linux ought to work, but neither has
   been tested. See [known gaps](docs/reference.md#known-gaps).
+- **Optional SDK mode only:** GitHub Copilot CLI installed, signed in, and available as
+  `copilot` on `PATH` (or configured with `experimental.sdkSessions.runtimePath`).
 
 **No app registration. No admin consent. No Power Automate. No tunnel.** The bridge talks
 to Teams through the Agency Teams MCP, which is already approved in the tenant, so there is
@@ -166,6 +168,7 @@ Copilot.
 |---|---|
 | **Teams Bridge: Set Up** | Pick your team and channel, verify the connection |
 | **Teams Bridge: Start a Session** | Open a thread for a task manually |
+| **Teams Bridge: Start a Teams-managed Copilot Session (Experimental)** | Start a durable Copilot SDK session whose user interface is one Teams thread |
 | Teams Bridge: Send Test Notification | Confirm the round trip |
 | Teams Bridge: Start / Stop Listening | Control reply polling |
 | Teams Bridge: Check Teams for Replies Now | Force a poll |
@@ -185,6 +188,31 @@ Copilot.
 | `autoSubmitReplies` | `true` | Submit replies automatically vs. pre-fill the chat box |
 | `autoStart` | `true` | Start listening on activation |
 | `sessionIdleMinutes` | `120` | Idle time before a session expires and warns you (2 hours; the MCP server uses 4) |
+| `experimental.sdkSessions.enabled` | `false` | Enables the opt-in Teams-managed Copilot SDK command |
+| `experimental.sdkSessions.runtimePath` | `copilot` | Installed Copilot CLI executable used by the SDK mode |
+
+## Experimental: Teams-managed Copilot SDK sessions
+
+This mode removes the fragile chat-injection step by creating a conversation that the
+bridge owns through the official GitHub Copilot SDK:
+
+1. Enable `copilotTeamsBridge.experimental.sdkSessions.enabled`.
+2. Install and sign in to GitHub Copilot CLI (`copilot --version`).
+3. Run **Teams Bridge: Start a Teams-managed Copilot Session (Experimental)**.
+4. Enter the task, choose interactive/plan/autopilot behavior, and choose a model.
+
+One Teams thread maps directly to one durable SDK session. Later replies resume that exact
+session even after the original turn finishes. The selected model uses the signed-in user's
+Copilot entitlement; `Auto` lets GitHub route the request.
+
+This is a **separate conversation**, not a VS Code Copilot Chat. Its history does not appear
+in the Chat sidebar, and the SDK cannot adopt an existing sidebar conversation. Disable the
+setting to roll back to the normal bridge without removing any existing functionality.
+
+Permission prompts normally appear in VS Code. The **Autopilot with full machine access**
+profile is intentionally dangerous: anyone who can reply in that Teams thread can cause the
+agent to run commands and modify files as you. Use it only in a private channel whose
+membership you trust.
 
 ## Also available as an MCP server
 
@@ -276,7 +304,6 @@ npm test
 ## License
 
 MIT
-
 
 
 

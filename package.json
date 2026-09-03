@@ -109,6 +109,11 @@
         "category": "Copilot Teams Bridge"
       },
       {
+        "command": "copilotTeamsBridge.startSdkSession",
+        "title": "Teams Bridge: Start a Teams-managed Copilot Session (Experimental)",
+        "category": "Copilot Teams Bridge"
+      },
+      {
         "command": "copilotTeamsBridge.start",
         "title": "Teams Bridge: Start Listening for Replies",
         "category": "Copilot Teams Bridge"
@@ -338,6 +343,16 @@
           "type": "boolean",
           "default": true,
           "description": "Register the bundled MCP server for Copilot CLI sessions by writing ~/.copilot/mcp-config.json, so a CLI run outside VS Code can post to Teams. When off, the bridge's entry is removed from that file, leaving other MCP servers untouched."
+        },
+        "copilotTeamsBridge.experimental.sdkSessions.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental SDK-owned Copilot sessions whose user interface is a Teams thread. These are separate from VS Code Copilot Chat."
+        },
+        "copilotTeamsBridge.experimental.sdkSessions.runtimePath": {
+          "type": "string",
+          "default": "copilot",
+          "description": "Path to the installed GitHub Copilot CLI executable used as the runtime for experimental Teams-managed sessions."
         }
       }
     }
@@ -350,7 +365,7 @@
     "lint:layers": "node scripts/check-layers.js",
     "pretest": "npm run compile",
     "test": "node --test out/test/*.test.js",
-    "package": "npx --yes @vscode/vsce package --no-dependencies",
+    "package": "node scripts/stage-sdk.js && npx --yes @vscode/vsce package --no-dependencies",
     "test:host": "npm run compile && node out/integration/runTests.js"
   },
   "devDependencies": {
@@ -369,5 +384,8 @@
   "bugs": {
     "url": "https://github.com/robin23686/copilot-teams-bridge/issues"
   },
-  "homepage": "https://github.com/robin23686/copilot-teams-bridge#readme"
+  "homepage": "https://github.com/robin23686/copilot-teams-bridge#readme",
+  "dependencies": {
+    "@github/copilot-sdk": "1.0.11"
+  }
 }

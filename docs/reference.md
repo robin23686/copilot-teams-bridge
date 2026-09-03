@@ -21,20 +21,53 @@ Microsoft identity.
 
 ---
 
-## The three ways it runs
+## The four ways it runs
 
-| | **A — VS Code extension** | **B — MCP server** | **C — Local harness** |
-|---|---|---|---|
-| Used by | Copilot Chat sidebar | Agent sessions, Copilot CLI, Claude Desktop, Cursor | Tests, development, any client |
-| Tool name | `copilotTeamsBridge_notify` | `teams_notify`, `teams_check_replies`, `teams_list_sessions` | n/a — files |
-| Runs in | Extension host | Separate Node process | In-process |
-| Talks to Teams | Yes, via Agency | Yes, via Agency | **No** — `outbox.jsonl` / `inbox.jsonl` |
-| Session store | VS Code `globalState` | `~/.copilot-teams-bridge/sessions.json` | Either, depending on host |
-| Setup needed | Team + channel in settings | None inside VS Code (see below) | Set transport to `file` |
+| | **A — VS Code extension** | **B — MCP server** | **C — Local harness** | **D — Copilot SDK (experimental)** |
+|---|---|---|---|---|
+| Used by | Copilot Chat sidebar | Agent sessions, Copilot CLI, Claude Desktop, Cursor | Tests, development, any client | A Teams-owned Copilot conversation |
+| Tool name | `copilotTeamsBridge_notify` | `teams_notify`, `teams_check_replies`, `teams_list_sessions` | n/a — files | n/a — host-managed |
+| Runs in | Extension host | Separate Node process | In-process | Extension host + installed Copilot CLI runtime |
+| Talks to Teams | Yes, via Agency | Yes, via Agency | **No** — `outbox.jsonl` / `inbox.jsonl` | Yes, via the extension's existing bridge |
+| Session store | VS Code `globalState` | `~/.copilot-teams-bridge/sessions.json` | Either, depending on host | SDK history + bridge mapping in VS Code `globalState` |
+| Setup needed | Team + channel in settings | None inside VS Code (see below) | Set transport to `file` | Opt-in setting plus an installed, signed-in `copilot` executable |
 
 **A and B are separate implementations sharing one engine (`src/core/bridge.ts`).** They
 keep separate session stores, so a thread created on one is not visible to the other. That
 is by design: the two hosts have different lifetimes and different limits.
+
+Path D deliberately owns its conversation. It uses the same Teams polling engine as Path A,
+but sends a reply directly to a durable SDK session instead of opening or injecting into a
+VS Code chat. A claimed reply never continues into the normal chat-injection path.
+
+### Experimental SDK mode
+
+Enable `copilotTeamsBridge.experimental.sdkSessions.enabled`, then run **Teams Bridge: Start
+a Teams-managed Copilot Session (Experimental)**. The command asks for:
+
+- the task;
+- interactive, plan, or autopilot behavior;
+- whether permissions are confirmed in VS Code or automatically approved; and
+- `Auto` or an available model reported by the signed-in Copilot account.
+
+The SDK protocol client is packaged with the extension. The large platform runtime is not:
+the mode launches the user's installed Copilot CLI with
+`copilotTeamsBridge.experimental.sdkSessions.runtimePath` (default `copilot`). The SDK
+currently requires Node `^20.19.0` or `>=22.12.0`.
+
+The SDK cannot adopt an arbitrary VS Code Copilot Chat session. Path D therefore has its own
+history and does not appear in the Chat sidebar. One persisted SDK session id maps to one
+bridge session and Teams thread; replies are serialized and resume that same id. `/stop`,
+`/cancel`, `/close`, and `/done` close both mappings.
+
+When the agent calls `ask_user`, the question is posted as `needs-input` in the owning Teams
+thread and the next reply supplies the answer. With normal permission mode, file, command,
+URL, and MCP permissions still require confirmation in VS Code.
+
+**Security boundary:** “Autopilot with full machine access” approves every SDK permission.
+Anyone able to reply in the thread can then cause commands to run and files to change with
+the VS Code user's access. Use that profile only in a private, trusted channel. Disabling
+the experimental setting returns to the established extension/MCP paths.
 
 ### What do "agent" and "CLI" actually mean here?
 

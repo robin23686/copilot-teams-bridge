@@ -16,3 +16,16 @@ tsconfig.json
 **/*.ts
 
 !assets/**
+
+# The experimental SDK mode uses the user's installed `copilot` executable rather than
+# bundling its ~282 MB platform runtime. Only the SDK protocol client and its pure-JS
+# dependencies belong in the VSIX.
+!node_modules/
+!node_modules/@github/
+!node_modules/@github/copilot-sdk/
+!node_modules/@github/copilot-sdk/package.json
+!node_modules/@github/copilot-sdk/dist/**
+!node_modules/vscode-jsonrpc/
+!node_modules/vscode-jsonrpc/**
+!node_modules/zod/
+!node_modules/zod/**

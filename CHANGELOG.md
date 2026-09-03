@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added an opt-in **Teams-managed Copilot SDK session** mode. One Teams thread now maps
+  directly to one durable SDK conversation, later replies resume the same SDK session, and
+  interactive, plan, autopilot, model, and permission profiles can be selected at start.
+  The mode uses the user's installed Copilot CLI rather than adding its ~282 MB runtime to
+  the VSIX. It is disabled by default and remains separate from VS Code Chat history.
 - Custom-agent guidance now allows both bridge host surfaces but requires selecting exactly
   one notification tool per session. The extension tool is preferred when callable; MCP is
   the fallback only when it is unavailable. Agents are told not to switch tools mid-session,
