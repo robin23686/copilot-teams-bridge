@@ -337,6 +337,10 @@ export class Bridge {
 		session.status = request.status;
 		session.title = request.title;
 		session.closed = false;
+		// Read before it is cleared: reviving a paused thread carries the same obligation
+		// as extendSession and recordActivity, and this is one of the two routes back to
+		// life that used to skip it.
+		const wasPaused = Boolean(session.expiredAt);
 		session.expiredAt = undefined;
 		session.lastActivityAt = this.now().toISOString();
 		session.lastActivitySource = 'notify';
@@ -349,6 +353,16 @@ export class Bridge {
 		}
 		// Replies are only interesting from this point forward.
 		session.lastReplyAt = session.lastReplyAt ?? session.lastActivityAt;
+		if (wasPaused) {
+			// The expiry notice told the user that anything posted while the thread was
+			// quiet is ignored and will not arrive late. Without this the stale watermark
+			// survives the revival, so the next poll asks Teams for everything since the
+			// session went quiet and delivers days-old instructions as if they were new.
+			this.advanceWatermark(session, session.lastActivityAt);
+			this.logger.info(
+				`Session "${session.title}" reactivated by a notification; skipping any replies posted while it was paused`
+			);
+		}
 		this.persist();
 
 		return {
@@ -1122,6 +1136,13 @@ export class Bridge {
 		session.lastActivitySource = 'chat-turn';
 		if (session.expiredAt) {
 			session.expiredAt = undefined;
+			// Same promise as every other revival route: the user was told replies posted
+			// while this thread was quiet are ignored, so the watermark moves to now
+			// rather than letting the next poll replay them.
+			this.advanceWatermark(session, session.lastActivityAt);
+			this.logger.info(
+				`Session "${session.title}" reactivated by a turn summary; skipping any replies posted while it was paused`
+			);
 		}
 		this.persist();
 		return true;
