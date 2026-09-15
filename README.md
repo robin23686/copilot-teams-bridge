@@ -57,7 +57,7 @@ cd copilot-teams-bridge
 npm install
 npm run compile
 npm run package
-code --install-extension copilot-teams-bridge-0.1.0.vsix
+code --install-extension copilot-teams-bridge-1.1.0.vsix
 ```
 
 Reload VS Code, then run **`Teams Bridge: Set Up`** from the Command Palette. It lists your

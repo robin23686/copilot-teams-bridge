@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#5B5FC7"/>
+    </marker>
+    <marker id="arrowBack" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#107C10"/>
+    </marker>
+    <filter id="card" x="-6%" y="-10%" width="112%" height="126%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0B1220" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="620" fill="#F7F8FC"/>
+
+  <text x="600" y="52" text-anchor="middle" font-size="30" font-weight="700" fill="#14171F">One Copilot session — one Teams thread</text>
+  <text x="600" y="84" text-anchor="middle" font-size="17" fill="#5C6273">The thread is the address, so parallel sessions can never be confused</text>
+
+  <!-- VS Code panel -->
+  <rect x="60" y="130" width="420" height="400" rx="14" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#card)"/>
+  <rect x="60" y="130" width="420" height="46" rx="14" fill="#1F2430"/>
+  <rect x="60" y="160" width="420" height="16" fill="#1F2430"/>
+  <circle cx="86" cy="153" r="6" fill="#FF5F57"/>
+  <circle cx="106" cy="153" r="6" fill="#FEBC2E"/>
+  <circle cx="126" cy="153" r="6" fill="#28C840"/>
+  <text x="152" y="159" font-size="15" font-weight="600" fill="#E6E9F2">VS Code — Copilot Chat</text>
+
+  <rect x="88" y="204" width="364" height="60" rx="10" fill="#EEF1FA"/>
+  <text x="106" y="228" font-size="15" fill="#3A4152">you</text>
+  <text x="106" y="250" font-size="15" font-weight="600" fill="#14171F">“Add a solutionArea filter to the API”</text>
+
+  <rect x="88" y="284" width="364" height="52" rx="10" fill="#FFFFFF" stroke="#E4E8F2"/>
+  <text x="106" y="316" font-size="15" fill="#3A4152">Copilot works… 14 minutes</text>
+
+  <rect x="88" y="356" width="364" height="74" rx="10" fill="#F2FBF3" stroke="#CDEBD2"/>
+  <text x="106" y="382" font-size="15" font-weight="600" fill="#0E6B10">resumes automatically</text>
+  <text x="106" y="406" font-size="15" fill="#3A4152">“adding retry with backoff…”</text>
+
+  <rect x="88" y="452" width="364" height="52" rx="10" fill="#FFFFFF" stroke="#E4E8F2"/>
+  <text x="106" y="484" font-size="14" fill="#5C6273">no ids typed · no copy-paste · same session</text>
+
+  <!-- Teams panel -->
+  <rect x="720" y="130" width="420" height="400" rx="14" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#card)"/>
+  <rect x="720" y="130" width="420" height="46" rx="14" fill="#5B5FC7"/>
+  <rect x="720" y="160" width="420" height="16" fill="#5B5FC7"/>
+  <text x="746" y="159" font-size="15" font-weight="600" fill="#FFFFFF">Microsoft Teams — on your phone</text>
+
+  <rect x="748" y="200" width="364" height="66" rx="10" fill="#F4F4FB" stroke="#E2E3F5"/>
+  <text x="766" y="224" font-size="14" fill="#5B5FC7" font-weight="600">@You · started</text>
+  <text x="766" y="248" font-size="15" fill="#14171F">Add a solutionArea filter to the API</text>
+
+  <rect x="748" y="286" width="364" height="88" rx="10" fill="#F4F4FB" stroke="#E2E3F5"/>
+  <text x="766" y="310" font-size="14" fill="#107C10" font-weight="600">completed</text>
+  <text x="766" y="334" font-size="15" fill="#14171F">Filter added, 4 tests pass.</text>
+  <text x="766" y="356" font-size="15" fill="#14171F">Ship it, or add a retry first?</text>
+
+  <rect x="748" y="394" width="364" height="58" rx="10" fill="#5B5FC7"/>
+  <text x="766" y="418" font-size="14" fill="#DDDEF6" font-weight="600">you · from the bus</text>
+  <text x="766" y="440" font-size="15" fill="#FFFFFF">yes, add the retry too</text>
+
+  <text x="930" y="490" text-anchor="middle" font-size="14" fill="#5C6273">just type — no @mention, no session id</text>
+
+  <!-- Flow arrows -->
+  <path d="M488 250 L712 232" stroke="#5B5FC7" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="600" y="228" text-anchor="middle" font-size="14" font-weight="600" fill="#5B5FC7">opens thread + tags you</text>
+
+  <path d="M488 336 L712 338" stroke="#5B5FC7" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="600" y="316" text-anchor="middle" font-size="14" font-weight="600" fill="#5B5FC7">posts progress + result</text>
+
+  <path d="M712 428 L488 400" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#arrowBack)"/>
+  <text x="600" y="466" text-anchor="middle" font-size="14" font-weight="600" fill="#107C10">your reply becomes the next instruction</text>
+
+  <!-- Footer strip -->
+  <rect x="60" y="556" width="1080" height="44" rx="10" fill="#EDEFF7"/>
+  <text x="600" y="584" text-anchor="middle" font-size="15" fill="#3A4152">
+    No app registration · no admin consent · no Power Automate · no tunnel — rides the Agency Teams MCP already approved in the tenant
+  </text>
+</svg>
