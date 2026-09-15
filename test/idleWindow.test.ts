@@ -245,3 +245,152 @@ describe('the two-hour window', () => {
 		bridge.dispose();
 	});
 });
+
+/**
+ * A transport that honours the watermark exactly as Teams does, which the class above
+ * deliberately does not: it hands back every queued reply regardless of `sinceIso`. The
+ * promise made by the expiry notice — that replies typed while paused are ignored — is
+ * only testable against a transport that filters, because that promise is kept by never
+ * asking for those replies in the first place.
+ */
+class WatermarkTransport implements ThreadedTransport {
+	readonly kind = 'file' as const;
+	readonly supportsReplies = true;
+	posts: { thread?: string; summary: string }[] = [];
+	private readonly replies: InboundReply[] = [];
+	private next = 1;
+
+	async createThread(notification: OutboundNotification): Promise<PostResult> {
+		this.posts.push({ summary: notification.summary });
+		return { thread: { id: 'thread-1' }, postedMessageId: `own-${this.next++}` };
+	}
+	async postToThread(thread: ThreadRef, notification: OutboundNotification): Promise<PostResult> {
+		this.posts.push({ thread: thread.id, summary: notification.summary });
+		return { thread, postedMessageId: `own-${this.next++}` };
+	}
+	async fetchReplies(_thread: ThreadRef, sinceIso: string | undefined): Promise<InboundReply[]> {
+		const since = sinceIso ? Date.parse(sinceIso) : Number.NaN;
+		return this.replies.filter(
+			(reply) => Number.isNaN(since) || Date.parse(reply.createdAt) > since
+		);
+	}
+	post(text: string, at: Date): void {
+		this.replies.push({
+			id: `r-${this.replies.length + 1}`,
+			threadId: 'thread-1',
+			text,
+			from: 'Rob',
+			createdAt: at.toISOString()
+		});
+	}
+}
+
+/**
+ * Reviving a paused session must not replay what was typed while it was paused.
+ *
+ * The user is told in the thread that anything posted while it is quiet is ignored and
+ * will not be delivered later. `extendSession` and `recordActivity` keep that promise by
+ * pushing the reply watermark to the instant of revival. Every other route back to life
+ * has to keep the same promise, or a week-old instruction lands in the chat as though the
+ * user had just typed it.
+ */
+describe('reviving a paused session', () => {
+	function build(): {
+		transport: WatermarkTransport;
+		bridge: Bridge;
+		delivered: string[];
+		advance(ms: number): void;
+		clock(): Date;
+	} {
+		const transport = new WatermarkTransport();
+		let now = Date.parse('2026-08-28T09:00:00.000Z');
+		const delivered: string[] = [];
+		const bridge = new Bridge({
+			transport,
+			store: new InMemorySessionStore(),
+			pollIntervalMs: 10_000,
+			sessionIdleMs: TWO_HOURS,
+			now: () => new Date(now),
+			setTimer: () => 1,
+			clearTimer: () => undefined
+		});
+		bridge.onReply((routed) => {
+			delivered.push(routed.text);
+		});
+		return {
+			transport,
+			bridge,
+			delivered,
+			advance: (ms: number) => {
+				now += ms;
+			},
+			clock: () => new Date(now)
+		};
+	}
+
+	it('ignores replies posted while paused when a notify brings it back', async () => {
+		const { transport, bridge, delivered, advance, clock } = build();
+		await bridge.notify({ sessionKey: 'task', title: 'A task', summary: 'started', status: 'progress' });
+
+		advance(TWO_HOURS + 1_000);
+		await bridge.poll();
+		assert.ok(bridge.listSessions()[0].expiredAt, 'the session must have paused first');
+
+		// Typed into a thread the user was told is no longer read.
+		advance(60_000);
+		transport.post('while you were away', clock());
+
+		advance(60_000);
+		await bridge.notify({ sessionKey: 'task', title: 'A task', summary: 'back', status: 'progress' });
+		await bridge.poll();
+
+		assert.deepStrictEqual(delivered, [], 'a reply posted while paused must stay ignored');
+		bridge.dispose();
+	});
+
+	it('still reads replies posted after a notify brought it back', async () => {
+		const { transport, bridge, delivered, advance, clock } = build();
+		await bridge.notify({ sessionKey: 'task', title: 'A task', summary: 'started', status: 'progress' });
+
+		advance(TWO_HOURS + 1_000);
+		await bridge.poll();
+
+		advance(60_000);
+		await bridge.notify({ sessionKey: 'task', title: 'A task', summary: 'back', status: 'progress' });
+
+		advance(60_000);
+		transport.post('carry on with the second half', clock());
+		await bridge.poll();
+
+		assert.deepStrictEqual(
+			delivered,
+			['carry on with the second half'],
+			'reviving must not deafen the thread to what the user says next'
+		);
+		bridge.dispose();
+	});
+
+	it('ignores replies posted while paused when a turn summary brings it back', async () => {
+		const { transport, bridge, delivered, advance, clock } = build();
+		await bridge.notify({ sessionKey: 'chat-abc', title: 'A task', summary: 'started', status: 'progress' });
+
+		advance(TWO_HOURS + 1_000);
+		await bridge.poll();
+		assert.ok(bridge.listSessions()[0].expiredAt, 'the session must have paused first');
+
+		advance(60_000);
+		transport.post('while you were away', clock());
+
+		advance(60_000);
+		const posted = await bridge.postTurnSummary('chat-abc', {
+			requestId: 'turn-1',
+			prompt: 'next thing',
+			summary: 'did the next thing'
+		});
+		assert.strictEqual(posted, true, 'the turn summary must have posted for this to be a revival');
+		await bridge.poll();
+
+		assert.deepStrictEqual(delivered, [], 'a reply posted while paused must stay ignored');
+		bridge.dispose();
+	});
+});
