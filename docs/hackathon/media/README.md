@@ -14,6 +14,7 @@ use no real tenant, colleague, repository, customer, or session data.
 | `04-resume.png` | The Teams reply returns to the originating VS Code session |
 | `05-parallel-sessions.png` | One-session-to-one-thread routing for parallel work |
 | `06-actual-extension.png` | Faithful VS Code mockup using real commands and statuses |
+| `07-assumptions-limitations.png` | Prototype prerequisites and current delivery constraints |
 
 Every image is 1920x1080. Each PNG has an editable SVG beside it.
 

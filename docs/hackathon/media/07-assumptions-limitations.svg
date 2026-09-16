@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" font-family="Segoe UI, Arial, sans-serif">
+    
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F7FF"/>
+      <stop offset="0.48" stop-color="#F5F7FB"/>
+      <stop offset="1" stop-color="#EAF7FC"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7B83EB"/>
+      <stop offset="1" stop-color="#464775"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F8CFF"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#17213A" flood-opacity="0.16"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#17213A" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrowPurple" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <path d="M0 0 L14 5 L0 10 Z" fill="#6264A7"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <path d="M0 0 L14 5 L0 10 Z" fill="#16A34A"/>
+    </marker>
+  </defs>
+    <rect width="1920" height="1080" fill="url(#bg)"/>
+    <circle cx="1740" cy="90" r="280" fill="#E8E7FB" opacity="0.7"/>
+    <circle cx="130" cy="1010" r="260" fill="#E5F6FC" opacity="0.75"/>
+    <text x="960" y="74" font-size="22" font-weight="700" fill="#6264A7" text-anchor="middle">PROTOTYPE SCOPE</text>
+    <text x="960" y="145" font-size="58" font-weight="750" fill="#111827" text-anchor="middle">Assumptions and limitations</text>
+    <text x="960" y="198" font-size="27" font-weight="400" fill="#667085" text-anchor="middle">What the current proof of concept expects—and where it stops today.</text>
+    
+    <g transform="translate(150 275)">
+      <rect width="760" height="590" rx="36" fill="#FFFFFF" stroke="#DCE2EE" filter="url(#shadow)"/>
+      <rect width="760" height="92" rx="36" fill="#EEEDFA"/>
+      <rect y="56" width="760" height="36" fill="#EEEDFA"/>
+      <text x="54" y="59" font-size="25" font-weight="750" fill="#6264A7" text-anchor="start">ASSUMPTIONS</text>
+      
+    <rect x="54" y="142" width="64" height="64" rx="16" fill="#6264A7"/>
+    <text x="86" y="185" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+    
+      <text x="148" y="174" font-size="27" font-weight="700" fill="#111827" text-anchor="start">Windows prototype</text>
+      <text x="148" y="208" font-size="20" font-weight="400" fill="#667085" text-anchor="start">macOS and Linux are not yet validated</text>
+      
+    <rect x="54" y="276" width="64" height="64" rx="16" fill="#2563EB"/>
+    <text x="86" y="319" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+    
+      <text x="148" y="308" font-size="27" font-weight="700" fill="#111827" text-anchor="start">VS Code 1.95+ and Copilot Chat</text>
+      <text x="148" y="342" font-size="20" font-weight="400" fill="#667085" text-anchor="start">Installed and signed in on the development machine</text>
+      
+    <rect x="54" y="410" width="64" height="64" rx="16" fill="#16A34A"/>
+    <text x="86" y="453" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+    
+      <text x="148" y="442" font-size="27" font-weight="700" fill="#111827" text-anchor="start">Agency CLI and Microsoft Teams</text>
+      <text x="148" y="476" font-size="20" font-weight="400" fill="#667085" text-anchor="start">Available through a Microsoft work account</text>
+    </g>
+    <g transform="translate(1010 275)">
+      <rect width="760" height="590" rx="36" fill="#1C2438" stroke="#303B55" filter="url(#shadow)"/>
+      <rect width="760" height="92" rx="36" fill="#273149"/>
+      <rect y="56" width="760" height="36" fill="#273149"/>
+      <text x="54" y="59" font-size="25" font-weight="750" fill="#A9B4FF" text-anchor="start">CURRENT LIMITATIONS</text>
+      
+    <rect x="54" y="142" width="64" height="64" rx="16" fill="#F59E0B"/>
+    <text x="86" y="185" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+    
+      <text x="148" y="174" font-size="27" font-weight="700" fill="#FFFFFF" text-anchor="start">VS Code must stay open</text>
+      <text x="148" y="208" font-size="20" font-weight="400" fill="#B8C1D1" text-anchor="start">Live reply polling pauses while VS Code is closed</text>
+      
+    <rect x="54" y="276" width="64" height="64" rx="16" fill="#6264A7"/>
+    <text x="86" y="319" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+    
+      <text x="148" y="308" font-size="27" font-weight="700" fill="#FFFFFF" text-anchor="start">Replies are text-only</text>
+      <text x="148" y="342" font-size="20" font-weight="400" fill="#B8C1D1" text-anchor="start">Images, attachments, and stickers are not delivered</text>
+      
+    <rect x="54" y="410" width="64" height="64" rx="16" fill="#2563EB"/>
+    <text x="86" y="453" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+    
+      <text x="148" y="442" font-size="27" font-weight="700" fill="#FFFFFF" text-anchor="start">Host modes are isolated</text>
+      <text x="148" y="476" font-size="20" font-weight="400" fill="#B8C1D1" text-anchor="start">Moving the same task between hosts starts a new thread</text>
+    </g>
+  
+  </svg>

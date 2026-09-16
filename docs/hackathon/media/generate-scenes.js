@@ -362,6 +362,44 @@ const actualExtension = frame(
   'Real command names and the real session status model from the current code.'
 );
 
+const assumptionsAndLimitations = frame(
+  `
+    <g transform="translate(150 275)">
+      <rect width="760" height="590" rx="36" fill="#FFFFFF" stroke="${palette.border}" filter="url(#shadow)"/>
+      <rect width="760" height="92" rx="36" fill="${palette.purpleLight}"/>
+      <rect y="56" width="760" height="36" fill="${palette.purpleLight}"/>
+      ${text(54, 59, 'ASSUMPTIONS', 25, 750, palette.purple)}
+      ${iconBadge(54, 142, '1', palette.purple, '')}
+      ${text(148, 174, 'Windows prototype', 27, 700)}
+      ${text(148, 208, 'macOS and Linux are not yet validated', 20, 400, palette.muted)}
+      ${iconBadge(54, 276, '2', palette.blue, '')}
+      ${text(148, 308, 'VS Code 1.95+ and Copilot Chat', 27, 700)}
+      ${text(148, 342, 'Installed and signed in on the development machine', 20, 400, palette.muted)}
+      ${iconBadge(54, 410, '3', palette.green, '')}
+      ${text(148, 442, 'Agency CLI and Microsoft Teams', 27, 700)}
+      ${text(148, 476, 'Available through a Microsoft work account', 20, 400, palette.muted)}
+    </g>
+    <g transform="translate(1010 275)">
+      <rect width="760" height="590" rx="36" fill="#1C2438" stroke="#303B55" filter="url(#shadow)"/>
+      <rect width="760" height="92" rx="36" fill="#273149"/>
+      <rect y="56" width="760" height="36" fill="#273149"/>
+      ${text(54, 59, 'CURRENT LIMITATIONS', 25, 750, '#A9B4FF')}
+      ${iconBadge(54, 142, '1', palette.amber, '')}
+      ${text(148, 174, 'VS Code must stay open', 27, 700, '#FFFFFF')}
+      ${text(148, 208, 'Live reply polling pauses while VS Code is closed', 20, 400, '#B8C1D1')}
+      ${iconBadge(54, 276, '2', palette.purple, '')}
+      ${text(148, 308, 'Replies are text-only', 27, 700, '#FFFFFF')}
+      ${text(148, 342, 'Images, attachments, and stickers are not delivered', 20, 400, '#B8C1D1')}
+      ${iconBadge(54, 410, '3', palette.blue, '')}
+      ${text(148, 442, 'Host modes are isolated', 27, 700, '#FFFFFF')}
+      ${text(148, 476, 'Moving the same task between hosts starts a new thread', 20, 400, '#B8C1D1')}
+    </g>
+  `,
+  'Prototype scope',
+  'Assumptions and limitations',
+  'What the current proof of concept expects—and where it stops today.'
+);
+
 const scenes = [
   ['01-hero', hero],
   ['02-notify', notify],
@@ -369,6 +407,7 @@ const scenes = [
   ['04-resume', resume],
   ['05-parallel-sessions', closing],
   ['06-actual-extension', actualExtension],
+  ['07-assumptions-limitations', assumptionsAndLimitations],
 ];
 
 for (const [name, svg] of scenes) {

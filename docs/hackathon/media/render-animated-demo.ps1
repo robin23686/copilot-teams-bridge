@@ -32,7 +32,8 @@ $scenes = @(
     @{ Image = '02-notify.png'; Narration = 'Keep working elsewhere. Copilot posts progress and tags you only when your attention is needed.' },
     @{ Image = '03-reply-anywhere.png'; Narration = 'Reply naturally from Teams. There are no session IDs to copy and no special commands to remember.' },
     @{ Image = '04-resume.png'; Narration = 'The bridge returns your reply to the exact Copilot chat that asked, and work resumes automatically.' },
-    @{ Image = '05-parallel-sessions.png'; Narration = 'One session maps to one thread, so even parallel agents stay isolated and every reply reaches the right place.' }
+    @{ Image = '05-parallel-sessions.png'; Narration = 'One session maps to one thread, so even parallel agents stay isolated and every reply reaches the right place.' },
+    @{ Image = '07-assumptions-limitations.png'; Narration = 'Requires Copilot and Teams. Keep VS Code open. Text only.' }
 )
 
 Add-Type -AssemblyName System.Speech
@@ -82,10 +83,11 @@ $videoFilters = @(
     "[2:v]scale=2048:1152,zoompan=z='min(zoom+0.00035,1.06)':x='iw/2-(iw/zoom/2)-100':y='ih/2-(ih/zoom/2)':d=192:s=1920x1080:fps=30,setsar=1,drawbox=x=1215:y=550:w=335:h=160:color=0x6264A7@0.38:t=6:enable='between(t,2.0,5.1)'[v2]",
     "[3:v]scale=2048:1152,zoompan=z='min(zoom+0.00038,1.065)':x='iw/2-(iw/zoom/2)-120':y='ih/2-(ih/zoom/2)+30':d=192:s=1920x1080:fps=30,setsar=1,drawbox=x=1325:y=635:w=250:h=100:color=0x16A34A@0.42:t=6:enable='between(t,2.2,5.2)'[v3]",
     "[4:v]scale=2048:1152,zoompan=z='min(zoom+0.00034,1.058)':x='iw/2-(iw/zoom/2)+55':y='ih/2-(ih/zoom/2)+25':d=192:s=1920x1080:fps=30,setsar=1,drawbox=x=920:y=505:w=680:h=155:color=0x16A34A@0.38:t=6:enable='between(t,1.7,4.8)'[v4]",
-    "[5:v]scale=2048:1152,zoompan=z='min(zoom+0.00025,1.04)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=192:s=1920x1080:fps=30,setsar=1,drawbox=x=650:y=620:w=620:h=125:color=0x7B83EB@0.34:t=6:enable='between(t,2.0,5.0)'[v5]"
+    "[5:v]scale=2048:1152,zoompan=z='min(zoom+0.00025,1.04)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=192:s=1920x1080:fps=30,setsar=1,drawbox=x=650:y=620:w=620:h=125:color=0x7B83EB@0.34:t=6:enable='between(t,2.0,5.0)'[v5]",
+    "[6:v]scale=2048:1152,zoompan=z='min(zoom+0.00018,1.03)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=192:s=1920x1080:fps=30,setsar=1[v6]"
 )
 
-$xfadeTransitions = @('fade', 'slideleft', 'fadeblack', 'slideup', 'smoothleft')
+$xfadeTransitions = @('fade', 'slideleft', 'fadeblack', 'slideup', 'smoothleft', 'fade')
 $lastVideo = 'v0'
 for ($index = 1; $index -lt $scenes.Count; $index++) {
     $outputLabel = "x$index"
