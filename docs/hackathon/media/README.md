@@ -7,7 +7,7 @@ use no real tenant, colleague, repository, customer, or session data.
 
 | Asset | Purpose |
 |---|---|
-| `copilot-teams-bridge-concept.mp4` | 26-second, silent, captioned 1080p concept video |
+| `copilot-teams-bridge-concept.mp4` | Animated, narrated 1080p concept demo with UI sound cues |
 | `01-hero.png` | Primary hero image: VS Code session connected to a Teams phone |
 | `02-notify.png` | Copilot works while Teams tells the user where to follow it |
 | `03-reply-anywhere.png` | The user unblocks Copilot from their phone |
@@ -17,8 +17,9 @@ use no real tenant, colleague, repository, customer, or session data.
 
 Every image is 1920x1080. Each PNG has an editable SVG beside it.
 
-The video contains no audio by design: every idea is expressed as on-screen copy, so it
-works when judges watch with sound off.
+The video combines gentle camera motion, focus highlights, product-style transitions,
+spoken narration, and subtle notification/send/resume sounds. Every key idea is still
+expressed as on-screen copy, so it remains understandable when judges watch with sound off.
 
 ## Accuracy
 
@@ -49,6 +50,10 @@ npm install @resvg/resvg-js ffmpeg-static --no-audit --no-fund
 Pop-Location
 
 node .\generate-scenes.js
+.\render-animated-demo.ps1
 ```
 
-The checked-in PNGs and MP4 are the submission artifacts; regeneration is optional.
+`render-animated-demo.ps1` uses the Windows `Microsoft Zira Desktop` voice and the temporary
+`ffmpeg-static` installation. It animates the checked-in PNG scenes and produces the final
+AAC + H.264 MP4. The checked-in PNGs and MP4 are the submission artifacts; regeneration is
+optional.

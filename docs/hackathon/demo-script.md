@@ -5,9 +5,10 @@ captured on your machine, because it shows your real Teams tenant and your real 
 session. This is the shot list and the narration so that takes about ten minutes.
 
 > **Need a video without recording a real tenant?** Use
-> `media/copilot-teams-bridge-concept.mp4`. It is a 26-second captioned 1080p concept
-> video built from fictional product mockups, with actual Teams, VS Code, and Copilot
-> icons. The rest of this guide is for an optional live demo that proves the integration.
+> `media/copilot-teams-bridge-concept.mp4`. It is a 35-second animated and narrated 1080p
+> concept demo built from fictional product mockups, with actual Teams, VS Code, and
+> Copilot icons. The rest of this guide is for an optional live demo that proves the
+> integration.
 
 ---
 
