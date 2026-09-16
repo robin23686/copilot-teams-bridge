@@ -6,6 +6,16 @@ talking points, and the demo assets.
 - `how-it-works.png` / `.svg` — the one-slide explanation of the idea
 - `architecture.png` / `.svg` — how it is built
 - `demo-script.md` — 90-second video script and the screenshot shot list
+- `media/copilot-teams-bridge-concept.mp4` — ready-to-submit 26-second concept video
+- `media/*.png` — six polished 1080p product mockups using fictional data and actual
+  Teams, VS Code, and Copilot icons
+
+### Best assets to submit
+
+1. `media/01-hero.png` — lead image
+2. `media/copilot-teams-bridge-concept.mp4` — short captioned video
+3. `media/06-actual-extension.png` — faithful view of the real extension surface
+4. `media/05-parallel-sessions.png` — the differentiating one-session/one-thread model
 
 ---
 
