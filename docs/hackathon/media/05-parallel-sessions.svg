@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" font-family="Segoe UI, Arial, sans-serif">
+    
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F7FF"/>
+      <stop offset="0.48" stop-color="#F5F7FB"/>
+      <stop offset="1" stop-color="#EAF7FC"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7B83EB"/>
+      <stop offset="1" stop-color="#464775"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F8CFF"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#17213A" flood-opacity="0.16"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#17213A" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrowPurple" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <path d="M0 0 L14 5 L0 10 Z" fill="#6264A7"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <path d="M0 0 L14 5 L0 10 Z" fill="#16A34A"/>
+    </marker>
+  </defs>
+    <rect width="1920" height="1080" fill="#111827"/>
+    <circle cx="1740" cy="90" r="280" fill="#202A44" opacity="0.7"/>
+    <circle cx="130" cy="1010" r="260" fill="#172554" opacity="0.75"/>
+    <text x="960" y="74" font-size="22" font-weight="700" fill="#A9B4FF" text-anchor="middle">COPILOT TEAMS BRIDGE</text>
+    <text x="960" y="145" font-size="58" font-weight="750" fill="#FFFFFF" text-anchor="middle">Run more agents. Babysit fewer.</text>
+    <text x="960" y="198" font-size="27" font-weight="400" fill="#C9D2E3" text-anchor="middle">No app registration. No admin consent. No tunnel.</text>
+    
+    <g transform="translate(190 280)">
+      <rect width="1540" height="560" rx="42" fill="#1C2438" stroke="#303B55" filter="url(#shadow)"/>
+      <g transform="translate(80 72)">
+        <rect width="410" height="164" rx="24" fill="#273149"/>
+        
+    <rect x="28" y="34" width="64" height="64" rx="16" fill="#4F8CFF"/>
+    <text x="60" y="77" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+    
+        <text x="110" y="68" font-size="23" font-weight="700" fill="#FFFFFF" text-anchor="start">API filter</text>
+        <text x="110" y="104" font-size="18" font-weight="500" fill="#A9B4C7" text-anchor="start">Tests running</text>
+        <circle cx="372" cy="82" r="10" fill="#F59E0B"/>
+      </g>
+      <g transform="translate(565 72)">
+        <rect width="410" height="164" rx="24" fill="#273149"/>
+        
+    <rect x="28" y="34" width="64" height="64" rx="16" fill="#7B83EB"/>
+    <text x="60" y="77" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+    
+        <text x="110" y="68" font-size="23" font-weight="700" fill="#FFFFFF" text-anchor="start">Docs update</text>
+        <text x="110" y="104" font-size="18" font-weight="500" fill="#A9B4C7" text-anchor="start">Waiting for reply</text>
+        <circle cx="372" cy="82" r="10" fill="#6264A7"/>
+      </g>
+      <g transform="translate(1050 72)">
+        <rect width="410" height="164" rx="24" fill="#273149"/>
+        
+    <rect x="28" y="34" width="64" height="64" rx="16" fill="#16A34A"/>
+    <text x="60" y="77" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+    
+        <text x="110" y="68" font-size="23" font-weight="700" fill="#FFFFFF" text-anchor="start">Retry logic</text>
+        <text x="110" y="104" font-size="18" font-weight="500" fill="#A9B4C7" text-anchor="start">Completed</text>
+        <circle cx="372" cy="82" r="10" fill="#16A34A"/>
+      </g>
+      <path d="M285 270 L285 340 L770 340" fill="none" stroke="#7B83EB" stroke-width="4"/>
+      <path d="M770 270 L770 340" fill="none" stroke="#7B83EB" stroke-width="4"/>
+      <path d="M1255 270 L1255 340 L770 340" fill="none" stroke="#7B83EB" stroke-width="4"/>
+      <rect x="460" y="346" width="620" height="122" rx="26" fill="url(#purpleGrad)"/>
+      <text x="770" y="394" font-size="31" font-weight="750" fill="#FFFFFF" text-anchor="middle">One session  &lt;-&gt;  one Teams thread</text>
+      <text x="770" y="438" font-size="20" font-weight="500" fill="#E2E3F5" text-anchor="middle">The thread is the address. Parallel work never gets crossed.</text>
+    </g>
+  
+  </svg>

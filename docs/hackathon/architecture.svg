@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#8A90A6"/>
+    </marker>
+    <filter id="sh" x="-8%" y="-14%" width="116%" height="132%">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#0B1220" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="640" fill="#F7F8FC"/>
+  <text x="600" y="48" text-anchor="middle" font-size="28" font-weight="700" fill="#14171F">Architecture — one core, three hosts, pluggable transports</text>
+  <text x="600" y="78" text-anchor="middle" font-size="16" fill="#5C6273">Session logic has no idea what VS Code or Teams are, which is why it is covered by 489 fast unit tests</text>
+
+  <!-- Hosts row -->
+  <text x="80" y="128" font-size="14" font-weight="700" fill="#8A90A6" letter-spacing="1">HOSTS</text>
+  <rect x="80" y="142" width="320" height="92" rx="12" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#sh)"/>
+  <text x="104" y="172" font-size="17" font-weight="600" fill="#14171F">VS Code extension</text>
+  <text x="104" y="196" font-size="14" fill="#5C6273">watches chat turns, injects replies</text>
+  <text x="104" y="218" font-size="14" fill="#5C6273">back into the originating session</text>
+
+  <rect x="440" y="142" width="320" height="92" rx="12" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#sh)"/>
+  <text x="464" y="172" font-size="17" font-weight="600" fill="#14171F">MCP server</text>
+  <text x="464" y="196" font-size="14" fill="#5C6273">teams_notify / teams_check_replies</text>
+  <text x="464" y="218" font-size="14" fill="#5C6273">any agent or CLI can call it</text>
+
+  <rect x="800" y="142" width="320" height="92" rx="12" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#sh)"/>
+  <text x="824" y="172" font-size="17" font-weight="600" fill="#14171F">CLI host</text>
+  <text x="824" y="196" font-size="14" fill="#5C6273">headless sessions, plus experimental</text>
+  <text x="824" y="218" font-size="14" fill="#5C6273">Copilot SDK mode</text>
+
+  <path d="M240 234 L240 292" stroke="#8A90A6" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M600 234 L600 292" stroke="#8A90A6" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M960 234 L960 292" stroke="#8A90A6" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Core -->
+  <rect x="80" y="300" width="1040" height="150" rx="14" fill="#EEF0FB" stroke="#C9CDEC"/>
+  <text x="104" y="330" font-size="14" font-weight="700" fill="#5B5FC7" letter-spacing="1">APPLICATION CORE — no I/O, no VS Code, no Teams</text>
+
+  <rect x="104" y="346" width="230" height="86" rx="10" fill="#FFFFFF" stroke="#D5D9F0"/>
+  <text x="128" y="374" font-size="16" font-weight="600" fill="#14171F">Session lifecycle</text>
+  <text x="128" y="396" font-size="13.5" fill="#5C6273">open · idle · expire · revive</text>
+  <text x="128" y="416" font-size="13.5" fill="#5C6273">one thread per session</text>
+
+  <rect x="350" y="346" width="230" height="86" rx="10" fill="#FFFFFF" stroke="#D5D9F0"/>
+  <text x="374" y="374" font-size="16" font-weight="600" fill="#14171F">Reply routing</text>
+  <text x="374" y="396" font-size="13.5" fill="#5C6273">thread → session → chat</text>
+  <text x="374" y="416" font-size="13.5" fill="#5C6273">watermark + id dedup</text>
+
+  <rect x="596" y="346" width="230" height="86" rx="10" fill="#FFFFFF" stroke="#D5D9F0"/>
+  <text x="620" y="374" font-size="16" font-weight="600" fill="#14171F">Notification policy</text>
+  <text x="620" y="396" font-size="13.5" fill="#5C6273">single host wins, so you</text>
+  <text x="620" y="416" font-size="13.5" fill="#5C6273">never get the same post twice</text>
+
+  <rect x="842" y="346" width="254" height="86" rx="10" fill="#FFFFFF" stroke="#D5D9F0"/>
+  <text x="866" y="374" font-size="16" font-weight="600" fill="#14171F">Durable state</text>
+  <text x="866" y="396" font-size="13.5" fill="#5C6273">survives reload and restart</text>
+  <text x="866" y="416" font-size="13.5" fill="#5C6273">sessions · delivered · threads</text>
+
+  <path d="M400 450 L400 512" stroke="#8A90A6" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M800 450 L800 512" stroke="#8A90A6" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Transports -->
+  <text x="80" y="500" font-size="14" font-weight="700" fill="#8A90A6" letter-spacing="1">TRANSPORTS</text>
+  <rect x="240" y="520" width="320" height="86" rx="12" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#sh)"/>
+  <text x="264" y="550" font-size="17" font-weight="600" fill="#14171F">Agency Teams MCP</text>
+  <text x="264" y="574" font-size="14" fill="#5C6273">real Teams channels and threads —</text>
+  <text x="264" y="594" font-size="14" fill="#5C6273">no app registration, no consent</text>
+
+  <rect x="640" y="520" width="320" height="86" rx="12" fill="#FFFFFF" stroke="#DFE3EE" filter="url(#sh)"/>
+  <text x="664" y="550" font-size="17" font-weight="600" fill="#14171F">File transport</text>
+  <text x="664" y="574" font-size="14" fill="#5C6273">the whole loop runs offline,</text>
+  <text x="664" y="594" font-size="14" fill="#5C6273">so demos never depend on a tenant</text>
+</svg>
